@@ -3,7 +3,7 @@
   "version": "5.0.0",
   "private": true,
   "type": "module",
-  "description": "Production-ready Tun Western Armenian translator with Supabase, secure voice input and speech playback, direct Stripe Billing, manual plan overrides and secure embeddable website widgets.",
+  "description": "Production-ready Tun Western Armenian translator with Supabase, direct Stripe Billing, manual plan overrides and secure embeddable website widgets.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -19,8 +19,7 @@
     "supabase:link": "npx supabase link",
     "supabase:db:push": "npx supabase db push",
     "supabase:function:deploy": "npx supabase functions deploy translate --no-verify-jwt",
-    "supabase:voice:deploy": "npx supabase functions deploy voice --no-verify-jwt",
-    "supabase:functions:deploy": "npx supabase functions deploy translate --no-verify-jwt && npx supabase functions deploy voice --no-verify-jwt && npx supabase functions deploy widget-translate --no-verify-jwt && npx supabase functions deploy stripe-checkout --no-verify-jwt && npx supabase functions deploy stripe-portal --no-verify-jwt && npx supabase functions deploy stripe-webhook --no-verify-jwt && npx supabase functions deploy stripe-admin --no-verify-jwt && npx supabase functions deploy delete-account --no-verify-jwt",
+    "supabase:functions:deploy": "npx supabase functions deploy translate --no-verify-jwt && npx supabase functions deploy widget-translate --no-verify-jwt && npx supabase functions deploy stripe-checkout --no-verify-jwt && npx supabase functions deploy stripe-portal --no-verify-jwt && npx supabase functions deploy stripe-webhook --no-verify-jwt && npx supabase functions deploy stripe-admin --no-verify-jwt && npx supabase functions deploy delete-account --no-verify-jwt",
     "supabase:secrets": "npx supabase secrets set --env-file supabase/functions/.env.local",
     "test:edge": "node scripts/test-edge-function.mjs",
     "production:check": "npm run lint && npm run test && npm run verify && npm run build",
