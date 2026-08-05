@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tun widget host test</title>
+  <style>
+    body { margin: 0; padding: 32px; background: #eef0f3; color: #17191c; font-family: Georgia, serif; }
+    textarea, button, select { font-family: monospace !important; border-radius: 0 !important; }
+    .host-shell { max-width: 900px; margin: auto; }
+  </style>
+</head>
+<body>
+  <main class="host-shell">
+    <h1>Host website CSS isolation test</h1>
+    <p>The host page intentionally applies conflicting typography and form styles.</p>
+    <div id="tun-western-armenian-translator"></div>
+  </main>
+  <script
+    src="http://localhost:3000/tun-translator-widget.js"
+    data-widget-key="wpk_REPLACE_ME"
+    data-container="tun-western-armenian-translator"
+    data-endpoint="http://127.0.0.1:54321/functions/v1/widget-translate"
+    data-supabase-key="YOUR_LOCAL_SUPABASE_ANON_OR_PUBLISHABLE_KEY"
+    data-theme="auto"
+    data-source-language="en"
+    data-target-language="hyw"
+    data-show-branding="true"
+    defer
+  ></script>
+</body>
+</html>

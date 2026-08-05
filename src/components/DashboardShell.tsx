@@ -1,0 +1,2 @@
+import type {ReactNode} from "react"; import {SiteFrame} from "@/components/SiteFrame"; import {DashboardNav} from "@/components/DashboardNav";
+export function DashboardShell({children,title,description,admin=false}:{children:ReactNode;title:string;description:string;admin?:boolean}){return <SiteFrame compact><div className="dashboard-heading"><div><p className="eyebrow">{admin?"Administration":"Your account"}</p><h1>{title}</h1><p>{description}</p></div></div><DashboardNav admin={admin}/><div className="dashboard-content">{children}</div></SiteFrame>}

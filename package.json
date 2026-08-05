@@ -1,0 +1,46 @@
+{
+  "name": "western-armenian-translator",
+  "version": "5.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Production-ready Tun Western Armenian translator with Supabase, direct Stripe Billing, manual plan overrides and secure embeddable website widgets.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "tsc --noEmit && node scripts/lint.mjs",
+    "test": "node scripts/test-critical.mjs && node scripts/test-manual-plan.mjs && node --experimental-strip-types scripts/test-widget.mjs",
+    "verify": "node scripts/verify-project.mjs",
+    "zip": "node scripts/create-zip.mjs",
+    "supabase:start": "npx supabase start",
+    "supabase:stop": "npx supabase stop",
+    "supabase:reset": "npx supabase db reset",
+    "supabase:functions": "npx supabase functions serve --env-file supabase/functions/.env.local",
+    "supabase:link": "npx supabase link",
+    "supabase:db:push": "npx supabase db push",
+    "supabase:function:deploy": "npx supabase functions deploy translate --no-verify-jwt",
+    "supabase:functions:deploy": "npx supabase functions deploy translate --no-verify-jwt && npx supabase functions deploy widget-translate --no-verify-jwt && npx supabase functions deploy stripe-checkout --no-verify-jwt && npx supabase functions deploy stripe-portal --no-verify-jwt && npx supabase functions deploy stripe-webhook --no-verify-jwt && npx supabase functions deploy stripe-admin --no-verify-jwt && npx supabase functions deploy delete-account --no-verify-jwt",
+    "supabase:secrets": "npx supabase secrets set --env-file supabase/functions/.env.local",
+    "test:edge": "node scripts/test-edge-function.mjs",
+    "production:check": "npm run lint && npm run test && npm run verify && npm run build",
+    "test:widget-edge": "node scripts/test-widget-edge-function.mjs"
+  },
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.57.4",
+    "next": "16.2.12",
+    "openai": "6.49.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.1.10",
+    "@types/node": "22.15.30",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "tailwindcss": "4.1.10",
+    "typescript": "5.8.3"
+  }
+}

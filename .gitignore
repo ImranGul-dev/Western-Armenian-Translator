@@ -1,0 +1,40 @@
+# dependencies
+/node_modules
+
+# Next.js
+/.next
+/out
+
+# local environment files
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Supabase local secrets and generated state
+supabase/functions/.env
+supabase/functions/.env.local
+supabase/functions/.env.*.local
+!supabase/functions/.env.example
+supabase/.branches
+supabase/.temp
+
+# logs and caches
+*.log
+.cache
+coverage
+
+# editor and operating-system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# generated archives
+western-armenian-translator.zip
+
+western-armenian-translator-phase-2.zip
+
+western-armenian-translator-phase-3.zip
+
+western-armenian-translator-production-ready.zip

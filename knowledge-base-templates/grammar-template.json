@@ -1,0 +1,18 @@
+[
+  {
+    "source_language": "en",
+    "target_language": "hyw",
+    "title": "Example unapproved rule",
+    "description": "REPLACE_WITH_EXPERT_APPROVED_WESTERN_ARMENIAN_RULE",
+    "rule_category": "general",
+    "keywords": [],
+    "correct_examples": [],
+    "incorrect_examples": [],
+    "exceptions": [],
+    "notes": "Placeholder only",
+    "source_name": "TunApp client-owned data",
+    "copyright_status": "Client-owned",
+    "commercial_use_allowed": false,
+    "approved": false
+  }
+]
