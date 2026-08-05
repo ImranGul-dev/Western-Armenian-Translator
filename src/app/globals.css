@@ -731,3 +731,77 @@ html.dark .tun-logo-image {
   .compact-stats { grid-template-columns: 1fr; }
   .manual-plan-control { min-width: 230px; }
 }
+
+/* Voice input and translated speech controls */
+.panel-action-icon {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+}
+
+.panel-action-active {
+  border-color: color-mix(in srgb, var(--accent) 34%, var(--border));
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.panel-action-active:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent-soft) 82%, var(--surface-muted));
+  color: var(--accent-text);
+}
+
+.voice-status-active {
+  color: var(--accent-text);
+  font-weight: 800;
+  opacity: 1;
+}
+
+.voice-status-active::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  vertical-align: 1px;
+  animation: voice-pulse 1.2s ease-in-out infinite;
+}
+
+.translation-panel textarea:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+@keyframes voice-pulse {
+  0%, 100% {
+    opacity: 0.42;
+    transform: scale(0.82);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+@media (max-width: 600px) {
+  .panel-actions {
+    gap: 2px;
+  }
+
+  .panel-action-icon {
+    width: 17px;
+    height: 17px;
+  }
+
+  .panel-action-active {
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voice-status-active::before {
+    animation: none;
+  }
+}

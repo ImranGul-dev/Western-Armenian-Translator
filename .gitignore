@@ -38,3 +38,6 @@ western-armenian-translator-phase-2.zip
 western-armenian-translator-phase-3.zip
 
 western-armenian-translator-production-ready.zip
+
+# TypeScript build cache
+*.tsbuildinfo
