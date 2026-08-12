@@ -20,15 +20,21 @@ export interface OpenAITranslationResult {
   estimatedCost: number | null;
 }
 
+export type TranslationDeltaHandler = (
+  delta: string,
+) => void | Promise<void>;
+
 function details(error: unknown): ErrorDetails {
   if (!error || typeof error !== "object") {
     return {};
   }
 
-  const raw = error as Record<string, unknown>;
+  const raw =
+    error as Record<string, unknown>;
 
   const nested =
-    raw.error && typeof raw.error === "object"
+    raw.error &&
+    typeof raw.error === "object"
       ? (raw.error as Record<string, unknown>)
       : {};
 
@@ -72,11 +78,14 @@ function estimateCost(
     usage?: {
       input_tokens?: number;
       output_tokens?: number;
-    };
+    } | null;
   };
 
-  const input = raw.usage?.input_tokens || 0;
-  const output = raw.usage?.output_tokens || 0;
+  const input =
+    raw.usage?.input_tokens || 0;
+
+  const output =
+    raw.usage?.output_tokens || 0;
 
   return Number(
     (
@@ -93,7 +102,8 @@ export function friendlyOpenAIError(
   message: string;
   code: string;
 } {
-  const info = details(error);
+  const info =
+    details(error);
 
   const combined =
     `${info.code || ""} ${info.type || ""} ${info.message || ""}`.toLowerCase();
@@ -167,19 +177,15 @@ export function friendlyOpenAIError(
 function reasoningForModel(
   model: string,
 ): { effort: "minimal" } | undefined {
-  const normalized = model
-    .trim()
-    .toLowerCase();
+  const normalized =
+    model.trim().toLowerCase();
 
   /*
-   * The current production/default translation model is
-   * gpt-5-mini. Translation is a constrained task, so use
-   * minimal reasoning to reduce latency while retaining the
-   * same model.
+   * Keep minimal reasoning only for the model family for
+   * which this project already used that setting.
    *
-   * Do not automatically apply this setting to arbitrary
-   * future model names because supported reasoning options
-   * can differ between model families.
+   * Other model families are intentionally left at their
+   * supported/default reasoning configuration.
    */
   if (
     normalized === "gpt-5-mini" ||
@@ -193,81 +199,100 @@ function reasoningForModel(
   return undefined;
 }
 
+function createOpenAIClient(
+  config: OpenAITranslationConfig,
+): OpenAI {
+  return new OpenAI({
+    apiKey: config.apiKey,
+
+    /*
+     * Avoid hidden retries that can make a single
+     * translation request take considerably longer.
+     */
+    maxRetries: 0,
+
+    timeout: config.timeoutMs,
+  });
+}
+
+function requestBody(
+  config: OpenAITranslationConfig,
+  instructions: string,
+  text: string,
+) {
+  const reasoning =
+    reasoningForModel(config.model);
+
+  return {
+    model: config.model,
+
+    instructions,
+
+    input: [
+      {
+        role: "user" as const,
+
+        content: [
+          {
+            type:
+              "input_text" as const,
+
+            text,
+          },
+        ],
+      },
+    ],
+
+    max_output_tokens: 8192,
+
+    ...(reasoning
+      ? {
+          reasoning,
+        }
+      : {}),
+
+    /*
+     * Translation content must not be stored by OpenAI.
+     */
+    store: false,
+  };
+}
+
+/*
+ * Existing non-streaming translation path.
+ *
+ * Keep this function while the rest of the application is
+ * migrated to streaming so deploying this shared file alone
+ * does not break the current translate Edge Function.
+ */
 export async function translateWithOpenAI(
   config: OpenAITranslationConfig,
   instructions: string,
   text: string,
 ): Promise<OpenAITranslationResult> {
-  const controller = new AbortController();
+  const controller =
+    new AbortController();
 
-  const timeout = setTimeout(
-    () => controller.abort(),
-    config.timeoutMs,
-  );
+  const timeout =
+    setTimeout(
+      () => controller.abort(),
+      config.timeoutMs,
+    );
 
   try {
-    /*
-     * Disable SDK-level automatic retries.
-     *
-     * The translation endpoint already has its own safe
-     * error handling and frontend retry flow. Avoiding
-     * hidden retries prevents one request from silently
-     * turning into several long OpenAI requests.
-     */
-    const openai = new OpenAI({
-      apiKey: config.apiKey,
-      maxRetries: 0,
-      timeout: config.timeoutMs,
-    });
-
-    const reasoning =
-      reasoningForModel(config.model);
+    const openai =
+      createOpenAIClient(config);
 
     const response =
       await openai.responses.create(
-        {
-          model: config.model,
-
+        requestBody(
+          config,
           instructions,
-
-          input: [
-            {
-              role: "user",
-              content: [
-                {
-                  type: "input_text",
-                  text,
-                },
-              ],
-            },
-          ],
-
-          /*
-           * Keep the existing maximum for now. We will
-           * optimize prompt size separately so long
-           * translations are not accidentally truncated.
-           */
-          max_output_tokens: 8192,
-
-          /*
-           * GPT-5 mini defaults to more reasoning than a
-           * straightforward translation normally needs.
-           * Minimal reasoning materially reduces unnecessary
-           * generation work.
-           */
-          ...(reasoning
-            ? {
-                reasoning,
-              }
-            : {}),
-
-          /*
-           * Translation content must not be stored by OpenAI.
-           */
-          store: false,
-        },
+          text,
+        ),
         {
-          signal: controller.signal,
+          signal:
+            controller.signal,
         },
       );
 
@@ -275,17 +300,162 @@ export async function translateWithOpenAI(
       response.output_text?.trim();
 
     if (!translation) {
-      throw new Error("EMPTY_TRANSLATION");
+      throw new Error(
+        "EMPTY_TRANSLATION",
+      );
     }
 
     return {
       translation,
 
-      estimatedCost: estimateCost(
-        response,
-        config.inputCostPerMillion,
-        config.outputCostPerMillion,
-      ),
+      estimatedCost:
+        estimateCost(
+          response,
+          config.inputCostPerMillion,
+          config.outputCostPerMillion,
+        ),
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+/*
+ * Streaming translation path.
+ *
+ * OpenAI sends small response.output_text.delta events as
+ * translated text is generated. The caller can immediately
+ * forward each delta to the browser instead of waiting for
+ * the complete translation.
+ */
+export async function translateWithOpenAIStream(
+  config: OpenAITranslationConfig,
+  instructions: string,
+  text: string,
+  onDelta: TranslationDeltaHandler,
+): Promise<OpenAITranslationResult> {
+  const controller =
+    new AbortController();
+
+  const timeout =
+    setTimeout(
+      () => controller.abort(),
+      config.timeoutMs,
+    );
+
+  let translation = "";
+
+  let completedResponse:
+    | unknown
+    | null = null;
+
+  try {
+    const openai =
+      createOpenAIClient(config);
+
+    const stream =
+      await openai.responses.create(
+        {
+          ...requestBody(
+            config,
+            instructions,
+            text,
+          ),
+
+          stream: true,
+        },
+        {
+          signal:
+            controller.signal,
+        },
+      );
+
+    for await (
+      const event of stream
+    ) {
+      if (
+        event.type ===
+        "response.output_text.delta"
+      ) {
+        const delta =
+          event.delta;
+
+        if (delta) {
+          translation +=
+            delta;
+
+          await onDelta(delta);
+        }
+
+        continue;
+      }
+
+      if (
+        event.type ===
+        "response.completed"
+      ) {
+        completedResponse =
+          event.response;
+
+        continue;
+      }
+
+      if (
+        event.type ===
+        "response.failed"
+      ) {
+        const response =
+          event.response as {
+            error?: {
+              code?: string;
+              message?: string;
+            } | null;
+          };
+
+        const error =
+          new Error(
+            response.error?.message ||
+              "OpenAI response failed.",
+          ) as Error & {
+            code?: string;
+          };
+
+        error.code =
+          response.error?.code ||
+          "response_failed";
+
+        throw error;
+      }
+
+      if (
+        event.type ===
+        "response.incomplete"
+      ) {
+        throw new Error(
+          "OPENAI_INCOMPLETE_RESPONSE",
+        );
+      }
+    }
+
+    const finalTranslation =
+      translation.trim();
+
+    if (!finalTranslation) {
+      throw new Error(
+        "EMPTY_TRANSLATION",
+      );
+    }
+
+    return {
+      translation:
+        finalTranslation,
+
+      estimatedCost:
+        estimateCost(
+          completedResponse,
+          config.inputCostPerMillion,
+          config.outputCostPerMillion,
+        ),
     };
   } finally {
     clearTimeout(timeout);

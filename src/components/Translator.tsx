@@ -16,23 +16,27 @@ import { TranslationFeedback } from "@/components/TranslationFeedback";
 import { UsageMeter } from "@/components/UsageMeter";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useAuth } from "@/contexts/AuthContext";
+
 import {
   canSwapLanguages,
   getSourcesForTarget,
   getTargetsForSource,
   type LanguageCode,
 } from "@/lib/languages";
+
 import {
   FALLBACK_PUBLIC_TRANSLATION_SETTINGS,
   maxCharactersFor,
   type PublicTranslationSettings,
 } from "@/lib/plans";
+
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { requestTranslation } from "@/lib/translation-api";
 import { countMeaningfulCharacters } from "@/lib/validation";
+
 import type { UsageSummary } from "@/types/database";
 
-const AUTO_TRANSLATE_DELAY_MS = 350;
+const AUTO_TRANSLATE_DELAY_MS = 200;
 
 function requestSignature(
   text: string,
@@ -105,11 +109,10 @@ export function Translator() {
   ] = useState(false);
 
   /*
-   * Previously this was 700 ms.
+   * Realtime-style automatic translation.
    *
-   * 350 ms keeps automatic translation from firing on every
-   * keystroke while substantially reducing the visible wait
-   * before the network request begins.
+   * 200 ms keeps the interface responsive while still
+   * avoiding a request for every individual keystroke.
    */
   const debouncedText =
     useDebouncedValue(
@@ -261,6 +264,13 @@ export function Translator() {
           return;
         }
 
+        /*
+         * Cancel any previous translation stream.
+         *
+         * This is important for realtime translation:
+         * if the user keeps typing, old OpenAI output should
+         * never overwrite the translation for the new text.
+         */
         abortRef.current?.abort();
 
         const controller =
@@ -276,6 +286,14 @@ export function Translator() {
         setError("");
         setUpgrade(false);
 
+        /*
+         * Remove the previous completed translation so the
+         * panel can immediately begin displaying the new
+         * streamed translation.
+         */
+        setTranslation("");
+        setRequestId("");
+
         try {
           const data =
             await requestTranslation(
@@ -288,10 +306,36 @@ export function Translator() {
               controller.signal,
 
               session?.access_token,
+
+              /*
+               * STREAMING CALLBACK
+               *
+               * requestTranslation() calls this repeatedly as
+               * OpenAI translation deltas arrive.
+               */
+              (
+                partialTranslation,
+              ) => {
+                /*
+                 * Ignore chunks belonging to an old request.
+                 */
+                if (
+                  current !==
+                    seq.current ||
+                  controller.signal.aborted
+                ) {
+                  return;
+                }
+
+                setTranslation(
+                  partialTranslation,
+                );
+              },
             );
 
           if (
-            current !== seq.current
+            current !== seq.current ||
+            controller.signal.aborted
           ) {
             return;
           }
@@ -299,6 +343,11 @@ export function Translator() {
           last.current =
             signature;
 
+          /*
+           * Replace the progressively assembled text with the
+           * canonical final translation returned by the Edge
+           * Function.
+           */
           setTranslation(
             data.translation,
           );
@@ -317,6 +366,14 @@ export function Translator() {
           ) {
             return;
           }
+
+          /*
+           * A partial streamed translation must not remain on
+           * screen as though it were a completed translation
+           * if the request fails halfway through.
+           */
+          setTranslation("");
+          setRequestId("");
 
           const failure =
             cause as Error & {
@@ -353,9 +410,14 @@ export function Translator() {
       ],
     );
 
+  /*
+   * Automatically translate shortly after the user stops
+   * typing.
+   */
   useEffect(() => {
     if (
-      debouncedText === sourceText
+      debouncedText ===
+      sourceText
     ) {
       void translate(
         debouncedText,
@@ -369,9 +431,14 @@ export function Translator() {
     translate,
   ]);
 
+  /*
+   * Abort an active translation stream when the component
+   * leaves the page.
+   */
   useEffect(
     () => () => {
       abortRef.current?.abort();
+
       seq.current += 1;
     },
     [],
@@ -440,6 +507,10 @@ export function Translator() {
   function textChange(
     value: string,
   ) {
+    /*
+     * Immediately stop the previous stream when the user
+     * types another character.
+     */
     cancel();
 
     last.current = "";
@@ -582,6 +653,7 @@ export function Translator() {
             onKeyDown={keyDown}
             onClear={() => {
               reset();
+
               setSourceText("");
               setTranslation("");
             }}
@@ -688,8 +760,12 @@ export function Translator() {
       {requestId &&
         translation && (
           <TranslationFeedback
-            requestId={requestId}
-            sourceText={sourceText}
+            requestId={
+              requestId
+            }
+            sourceText={
+              sourceText
+            }
             translation={
               translation
             }

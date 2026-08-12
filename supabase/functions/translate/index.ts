@@ -19,7 +19,7 @@ import { findRelevantContext } from "../_shared/knowledge-base.ts";
 
 import {
   friendlyOpenAIError,
-  translateWithOpenAI,
+  translateWithOpenAIStream,
 } from "../_shared/openai-translation.ts";
 
 import { consumeRateLimit } from "../_shared/rate-limit.ts";
@@ -78,24 +78,40 @@ async function usageEvent(
 
     user_id: account.userId,
 
-    anonymous_client_hash: account.userId
-      ? null
-      : values.clientHash,
+    anonymous_client_hash:
+      account.userId
+        ? null
+        : values.clientHash,
 
-    source_language: values.source,
-    target_language: values.target,
+    source_language:
+      values.source,
 
-    character_count: values.characters,
+    target_language:
+      values.target,
 
-    status: values.status,
-    success: values.success,
-    openai_processed: values.processed,
+    character_count:
+      values.characters,
 
-    latency_ms: values.latency,
-    model: values.model,
+    status:
+      values.status,
 
-    plan_id: account.plan.id,
-    plan_slug: account.plan.slug,
+    success:
+      values.success,
+
+    openai_processed:
+      values.processed,
+
+    latency_ms:
+      values.latency,
+
+    model:
+      values.model,
+
+    plan_id:
+      account.plan.id,
+
+    plan_slug:
+      account.plan.slug,
 
     estimated_cost_usd:
       values.estimatedCost,
@@ -221,6 +237,21 @@ async function saveHistory(
   return true;
 }
 
+function encodeStreamMessage(
+  encoder: TextEncoder,
+  message: Record<string, unknown>,
+): Uint8Array {
+  /*
+   * Each message is one JSON object followed by a newline.
+   *
+   * This is NDJSON and is straightforward for fetch() to
+   * consume progressively in the browser.
+   */
+  return encoder.encode(
+    `${JSON.stringify(message)}\n`,
+  );
+}
+
 export default {
   async fetch(
     request: Request,
@@ -242,12 +273,14 @@ export default {
 
     const base = {
       ...cors,
-      "X-Request-Id": requestId,
+      "X-Request-Id":
+        requestId,
     };
 
     /*
-     * Basic request validation is intentionally performed
-     * before any database or OpenAI work.
+     * Validate everything possible before opening a streaming
+     * response. Normal HTTP error status codes can therefore
+     * still be returned for invalid requests.
      */
 
     if (
@@ -267,38 +300,56 @@ export default {
         },
         403,
         {
-          "Cache-Control": "no-store",
-          "X-Request-Id": requestId,
+          "Cache-Control":
+            "no-store",
+
+          "X-Request-Id":
+            requestId,
         },
       );
     }
 
-    if (request.method === "OPTIONS") {
-      return new Response(null, {
-        status: 204,
-        headers: base,
-      });
+    if (
+      request.method ===
+      "OPTIONS"
+    ) {
+      return new Response(
+        null,
+        {
+          status: 204,
+          headers: base,
+        },
+      );
     }
 
-    if (request.method !== "POST") {
+    if (
+      request.method !==
+      "POST"
+    ) {
       return json(
         {
           success: false,
+
           error:
             "Only POST requests are supported.",
+
           requestId,
         },
         405,
         {
           ...base,
-          Allow: "POST, OPTIONS",
+
+          Allow:
+            "POST, OPTIONS",
         },
       );
     }
 
     if (
       !isPublishableKeyAccepted(
-        request.headers.get("apikey"),
+        request.headers.get(
+          "apikey",
+        ),
         config.publishableKeys,
       )
     ) {
@@ -351,8 +402,10 @@ export default {
       return json(
         {
           success: false,
+
           error:
             "Send the request as JSON.",
+
           requestId,
         },
         415,
@@ -370,7 +423,8 @@ export default {
 
     if (
       Number.isFinite(length) &&
-      length > MAX_REQUEST_BYTES
+      length >
+        MAX_REQUEST_BYTES
     ) {
       return json(
         {
@@ -419,7 +473,8 @@ export default {
           success: false,
 
           error:
-            error instanceof ValidationError
+            error instanceof
+              ValidationError
               ? error.message
               : "The translation request is not valid.",
 
@@ -435,7 +490,10 @@ export default {
         request.headers.get(
           "x-client-id",
         ) || "anonymous"
-      ).slice(0, 160);
+      ).slice(
+        0,
+        160,
+      );
 
     const clientHash =
       await sha256Hex(
@@ -451,16 +509,18 @@ export default {
         config.adminKey,
         {
           auth: {
-            persistSession: false,
-            autoRefreshToken: false,
+            persistSession:
+              false,
+
+            autoRefreshToken:
+              false,
           },
         },
       );
 
     /*
-     * Account resolution still must happen first because
-     * plan limits and identity are required for the rest
-     * of the request.
+     * Account resolution must remain before quota/rate-limit
+     * checks because those limits depend on the active plan.
      */
     const account =
       await resolveAccount(
@@ -503,32 +563,30 @@ export default {
     }
 
     /*
-     * LATENCY OPTIMIZATION
-     *
-     * These three operations are independent once the
-     * account is known:
-     *
-     * 1. Current monthly character usage
-     * 2. Approved translation context retrieval
-     * 3. Rate-limit identifier hashing
-     *
-     * Previously they happened mostly one after another.
-     * Run them concurrently.
+     * These operations are independent, so perform them
+     * concurrently.
      */
-
     const usagePromise =
       currentCharacters(
         admin,
         account.identityKey,
       )
-        .then((used) => ({
-          success: true as const,
-          used,
-        }))
-        .catch(() => ({
-          success: false as const,
-          used: 0,
-        }));
+        .then(
+          (used) => ({
+            success:
+              true as const,
+
+            used,
+          }),
+        )
+        .catch(
+          () => ({
+            success:
+              false as const,
+
+            used: 0,
+          }),
+        );
 
     const contextPromise =
       findRelevantContext(
@@ -551,13 +609,16 @@ export default {
       usageResult,
       context,
       rateIdentifier,
-    ] = await Promise.all([
-      usagePromise,
-      contextPromise,
-      rateIdentifierPromise,
-    ]);
+    ] =
+      await Promise.all([
+        usagePromise,
+        contextPromise,
+        rateIdentifierPromise,
+      ]);
 
-    if (!usageResult.success) {
+    if (
+      !usageResult.success
+    ) {
       return json(
         {
           success: false,
@@ -607,12 +668,9 @@ export default {
     }
 
     /*
-     * Rate limiting remains enforced before OpenAI.
-     * We intentionally do not run this before checking the
-     * monthly quota so quota-blocked requests do not consume
-     * a normal translation rate-limit slot.
+     * Rate limiting remains before OpenAI so rejected requests
+     * do not consume model tokens.
      */
-
     let rate;
 
     try {
@@ -673,7 +731,9 @@ export default {
         429,
         {
           ...rateHeaders,
-          "Retry-After": "60",
+
+          "Retry-After":
+            "60",
         },
       );
     }
@@ -686,265 +746,473 @@ export default {
       );
 
     /*
-     * Keep the OpenAI request isolated from database
-     * post-processing. Only genuine OpenAI failures should
-     * be converted through friendlyOpenAIError().
+     * At this point all validation, quota checks and rate
+     * limiting have succeeded.
+     *
+     * Open a streaming response to the browser.
      */
+    const encoder =
+      new TextEncoder();
 
-    let result;
-
-    try {
-      result =
-        await translateWithOpenAI(
-          {
-            apiKey:
-              config.openAiApiKey,
-
-            model:
-              config.openAiModel,
-
-            timeoutMs:
-              config.openAiTimeoutMs,
-
-            inputCostPerMillion:
-              config.inputCostPerMillion,
-
-            outputCostPerMillion:
-              config.outputCostPerMillion,
-          },
-
-          instructions,
-          payload.text,
-        );
-    } catch (error) {
-      const friendly =
-        friendlyOpenAIError(
-          error,
-        );
-
-      /*
-       * Failure telemetry operations are independent.
-       * Run them concurrently rather than sequentially.
-       */
-      await Promise.all([
-        usageEvent(
-          admin,
-          account,
-          {
-            requestId,
-            clientHash,
-
-            source:
-              payload.sourceLanguage,
-
-            target:
-              payload.targetLanguage,
-
-            characters,
-
-            status:
-              friendly.code,
-
-            success: false,
-
-            processed: false,
-
-            latency:
-              Date.now() -
-              started,
-
-            model:
-              config.openAiModel,
-
-            estimatedCost:
-              null,
-
-            errorCode:
-              friendly.code,
-          },
-        ),
-
-        increment(
-          admin,
-          account,
-          0,
-          false,
-        ),
-
-        admin
-          .from("system_errors")
-          .insert({
-            request_id:
-              requestId,
-
-            error_code:
-              friendly.code,
-
-            safe_message:
-              friendly.message,
-
-            function_name:
-              "translate",
-          }),
-      ]);
-
-      return json(
+    const stream =
+      new ReadableStream<Uint8Array>(
         {
-          success: false,
-          error:
-            friendly.message,
-          code:
-            friendly.code,
-          requestId,
+          start(controller) {
+            /*
+             * Do not return this async Promise from start().
+             *
+             * Running it independently lets the Response be
+             * returned immediately while the stream continues
+             * producing translation chunks.
+             */
+            void (async () => {
+              let streamedText =
+                "";
+
+              try {
+                controller.enqueue(
+                  encodeStreamMessage(
+                    encoder,
+                    {
+                      type:
+                        "start",
+
+                      requestId,
+
+                      sourceLanguage:
+                        payload.sourceLanguage,
+
+                      targetLanguage:
+                        payload.targetLanguage,
+
+                      characterCount:
+                        characters,
+                    },
+                  ),
+                );
+
+                /*
+                 * Start the OpenAI streaming request.
+                 *
+                 * Each output_text delta is forwarded to the
+                 * browser as soon as it arrives.
+                 */
+                const result =
+                  await translateWithOpenAIStream(
+                    {
+                      apiKey:
+                        config.openAiApiKey,
+
+                      model:
+                        config.openAiModel,
+
+                      timeoutMs:
+                        config.openAiTimeoutMs,
+
+                      inputCostPerMillion:
+                        config.inputCostPerMillion,
+
+                      outputCostPerMillion:
+                        config.outputCostPerMillion,
+                    },
+
+                    instructions,
+
+                    payload.text,
+
+                    async (
+                      delta,
+                    ) => {
+                      /*
+                       * If the browser canceled the request
+                       * because the user typed something new,
+                       * stop forwarding the old translation.
+                       */
+                      if (
+                        request.signal
+                          .aborted
+                      ) {
+                        throw new DOMException(
+                          "Translation request was cancelled.",
+                          "AbortError",
+                        );
+                      }
+
+                      streamedText +=
+                        delta;
+
+                      controller.enqueue(
+                        encodeStreamMessage(
+                          encoder,
+                          {
+                            type:
+                              "delta",
+
+                            delta,
+                          },
+                        ),
+                      );
+                    },
+                  );
+
+                /*
+                 * Use the canonical finished translation from
+                 * the OpenAI helper. The accumulated delta
+                 * string exists only as an additional sanity
+                 * check/debug aid.
+                 */
+                const translation =
+                  result.translation ||
+                  streamedText.trim();
+
+                const completedLatency =
+                  Date.now() -
+                  started;
+
+                const profileUpdate =
+                  account.userId
+                    ? admin
+                        .from(
+                          "profiles",
+                        )
+                        .update({
+                          last_active_at:
+                            new Date().toISOString(),
+                        })
+                        .eq(
+                          "id",
+                          account.userId,
+                        )
+                    : Promise.resolve(
+                        null,
+                      );
+
+                /*
+                 * The translated text is already visible to
+                 * the browser while these bookkeeping
+                 * operations run.
+                 *
+                 * Use allSettled so a noncritical history or
+                 * telemetry problem does not replace a valid
+                 * translation with an error after it has
+                 * already been streamed.
+                 */
+                const postResults =
+                  await Promise.allSettled(
+                    [
+                      usageEvent(
+                        admin,
+                        account,
+                        {
+                          requestId,
+
+                          clientHash,
+
+                          source:
+                            payload.sourceLanguage,
+
+                          target:
+                            payload.targetLanguage,
+
+                          characters,
+
+                          status:
+                            "success",
+
+                          success:
+                            true,
+
+                          processed:
+                            true,
+
+                          latency:
+                            completedLatency,
+
+                          model:
+                            config.openAiModel,
+
+                          estimatedCost:
+                            result.estimatedCost,
+                        },
+                      ),
+
+                      increment(
+                        admin,
+                        account,
+                        characters,
+                        true,
+                      ),
+
+                      saveHistory(
+                        admin,
+                        account,
+                        requestId,
+                        payload,
+                        translation,
+                        characters,
+                      ),
+
+                      profileUpdate,
+                    ],
+                  );
+
+                const historyResult =
+                  postResults[2];
+
+                const historySaved =
+                  historyResult.status ===
+                  "fulfilled"
+                    ? historyResult.value
+                    : false;
+
+                /*
+                 * Log bookkeeping failures without breaking
+                 * the successful translation stream.
+                 */
+                for (
+                  const resultItem of
+                  postResults
+                ) {
+                  if (
+                    resultItem.status ===
+                    "rejected"
+                  ) {
+                    console.error(
+                      "Translation post-processing failed",
+                      resultItem.reason,
+                    );
+                  }
+                }
+
+                const nextUsed =
+                  used +
+                  characters;
+
+                const limit =
+                  account.plan
+                    .monthlyCharacterLimit;
+
+                /*
+                 * Final message contains the same metadata the
+                 * old JSON response returned.
+                 */
+                controller.enqueue(
+                  encodeStreamMessage(
+                    encoder,
+                    {
+                      type:
+                        "complete",
+
+                      success:
+                        true,
+
+                      translation,
+
+                      sourceLanguage:
+                        payload.sourceLanguage,
+
+                      targetLanguage:
+                        payload.targetLanguage,
+
+                      characterCount:
+                        characters,
+
+                      requestId,
+
+                      historySaved,
+
+                      usage: {
+                        used:
+                          nextUsed,
+
+                        limit,
+
+                        remaining:
+                          Math.max(
+                            0,
+                            limit -
+                              nextUsed,
+                          ),
+
+                        percentage:
+                          limit
+                            ? (
+                                nextUsed /
+                                limit
+                              ) *
+                              100
+                            : 0,
+
+                        plan:
+                          account.plan
+                            .slug,
+                      },
+                    },
+                  ),
+                );
+
+                controller.close();
+              } catch (error) {
+                /*
+                 * Cancellation caused by the user typing a new
+                 * value is expected and should not be recorded
+                 * as a platform/OpenAI failure.
+                 */
+                if (
+                  request.signal
+                    .aborted
+                ) {
+                  try {
+                    controller.close();
+                  } catch {
+                    // Stream may already have been cancelled.
+                  }
+
+                  return;
+                }
+
+                const friendly =
+                  friendlyOpenAIError(
+                    error,
+                  );
+
+                /*
+                 * Failure telemetry is independent and should
+                 * not prevent the error frame from eventually
+                 * reaching the browser.
+                 */
+                await Promise.allSettled(
+                  [
+                    usageEvent(
+                      admin,
+                      account,
+                      {
+                        requestId,
+
+                        clientHash,
+
+                        source:
+                          payload.sourceLanguage,
+
+                        target:
+                          payload.targetLanguage,
+
+                        characters,
+
+                        status:
+                          friendly.code,
+
+                        success:
+                          false,
+
+                        processed:
+                          false,
+
+                        latency:
+                          Date.now() -
+                          started,
+
+                        model:
+                          config.openAiModel,
+
+                        estimatedCost:
+                          null,
+
+                        errorCode:
+                          friendly.code,
+                      },
+                    ),
+
+                    increment(
+                      admin,
+                      account,
+                      0,
+                      false,
+                    ),
+
+                    admin
+                      .from(
+                        "system_errors",
+                      )
+                      .insert({
+                        request_id:
+                          requestId,
+
+                        error_code:
+                          friendly.code,
+
+                        safe_message:
+                          friendly.message,
+
+                        function_name:
+                          "translate",
+                      }),
+                  ],
+                );
+
+                try {
+                  controller.enqueue(
+                    encodeStreamMessage(
+                      encoder,
+                      {
+                        type:
+                          "error",
+
+                        success:
+                          false,
+
+                        status:
+                          friendly.status,
+
+                        error:
+                          friendly.message,
+
+                        code:
+                          friendly.code,
+
+                        requestId,
+                      },
+                    ),
+                  );
+
+                  controller.close();
+                } catch {
+                  /*
+                   * The browser may have disconnected before
+                   * the error could be sent.
+                   */
+                }
+              }
+            })();
+          },
         },
-        friendly.status,
-        rateHeaders,
       );
-    }
 
     /*
-     * OPENAI HAS FINISHED.
+     * NDJSON is used rather than one final JSON document.
      *
-     * Previously the browser waited for:
-     *
-     * usage event
-     *   ↓
-     * monthly increment
-     *   ↓
-     * history save/prune
-     *   ↓
-     * profile update
-     *
-     * These operations are independent and can run at the
-     * same time.
+     * The next frontend change will consume response.body with
+     * getReader() and process each newline-delimited message as
+     * it arrives.
      */
-
-    const completedLatency =
-      Date.now() - started;
-
-    const profileUpdate =
-      account.userId
-        ? admin
-            .from("profiles")
-            .update({
-              last_active_at:
-                new Date().toISOString(),
-            })
-            .eq(
-              "id",
-              account.userId,
-            )
-        : Promise.resolve(null);
-
-    const [
-      ,
-      ,
-      historySaved,
-    ] = await Promise.all([
-      usageEvent(
-        admin,
-        account,
-        {
-          requestId,
-          clientHash,
-
-          source:
-            payload.sourceLanguage,
-
-          target:
-            payload.targetLanguage,
-
-          characters,
-
-          status:
-            "success",
-
-          success: true,
-
-          processed: true,
-
-          latency:
-            completedLatency,
-
-          model:
-            config.openAiModel,
-
-          estimatedCost:
-            result.estimatedCost,
-        },
-      ),
-
-      increment(
-        admin,
-        account,
-        characters,
-        true,
-      ),
-
-      saveHistory(
-        admin,
-        account,
-        requestId,
-        payload,
-        result.translation,
-        characters,
-      ),
-
-      profileUpdate,
-    ]);
-
-    const nextUsed =
-      used + characters;
-
-    const limit =
-      account.plan
-        .monthlyCharacterLimit;
-
-    return json(
+    return new Response(
+      stream,
       {
-        success: true,
+        status: 200,
 
-        translation:
-          result.translation,
+        headers: {
+          ...rateHeaders,
 
-        sourceLanguage:
-          payload.sourceLanguage,
+          "Content-Type":
+            "application/x-ndjson; charset=utf-8",
 
-        targetLanguage:
-          payload.targetLanguage,
+          "Cache-Control":
+            "no-store, no-transform",
 
-        characterCount:
-          characters,
-
-        requestId,
-
-        historySaved,
-
-        usage: {
-          used:
-            nextUsed,
-
-          limit,
-
-          remaining:
-            Math.max(
-              0,
-              limit - nextUsed,
-            ),
-
-          percentage:
-            limit
-              ? (nextUsed /
-                  limit) *
-                100
-              : 0,
-
-          plan:
-            account.plan.slug,
+          "X-Content-Type-Options":
+            "nosniff",
         },
       },
-      200,
-      rateHeaders,
     );
   },
 };
