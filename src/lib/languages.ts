@@ -12,13 +12,15 @@ export interface LanguageDefinition {
 export const LANGUAGES: Record<LanguageCode, LanguageDefinition> = {
   en: { code: "en", name: "English", nativeName: "English", direction: "ltr" },
   hyw: { code: "hyw", name: "Western Armenian", nativeName: "Արեւմտահայերէն", direction: "ltr" },
-  hye: { code: "hye", name: "Eastern Armenian", nativeName: "Արևելահայերեն", direction: "ltr" }
+  hye: { code: "hye", name: "Eastern Armenian", nativeName: "Արևելահայերեն", direction: "ltr" },
 };
 
 export const SUPPORTED_LANGUAGE_PAIRS = [
   { source: "en", target: "hyw" },
   { source: "hyw", target: "en" },
-  { source: "hye", target: "hyw" }
+  { source: "hye", target: "hyw" },
+  { source: "en", target: "hye" },
+  { source: "hye", target: "en" },
 ] as const satisfies ReadonlyArray<{ source: LanguageCode; target: LanguageCode }>;
 
 export function isLanguageCode(value: unknown): value is LanguageCode {

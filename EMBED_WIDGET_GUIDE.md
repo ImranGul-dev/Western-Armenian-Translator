@@ -72,5 +72,5 @@ Administrators use **Admin → Widgets** to search by user, email, name, or doma
 - **Plan not eligible:** verify the effective plan and its widget settings in Admin → Plans and Admin → Users.
 - **Rate limit:** wait at least one minute and retry; administrators can adjust the plan rate limit.
 - **Usage limit:** wait for the next month or change the effective plan/allowance.
-- **Unsupported direction:** use English → Western Armenian, Western Armenian → English, or Eastern Armenian → Western Armenian.
+- **Unsupported direction:** use English → Western Armenian, Western Armenian → English, Eastern Armenian → Western Armenian, English → Eastern Armenian, or Eastern Armenian → English.
 - **No visible error detail:** a rejected domain intentionally receives no cross-origin permission; check the registered host and the browser console/network panel.

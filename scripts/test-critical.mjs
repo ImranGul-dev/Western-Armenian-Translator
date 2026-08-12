@@ -16,6 +16,8 @@ const required = [
   "supabase/migrations/20260805000100_complete_billing_portal.sql",
   "supabase/migrations/20260805000200_production_branding_and_plan_admin.sql",
   "supabase/migrations/20260805000300_embed_widget_and_manual_plan_overrides.sql",
+  "supabase/migrations/20260813000100_translation_speed_and_language_expansion.sql",
+  "src/lib/western-armenian-transliteration.ts",
   "supabase/functions/translate/index.ts",
   "supabase/functions/widget-translate/index.ts",
   "supabase/functions/stripe-checkout/index.ts",
@@ -64,6 +66,17 @@ for (const term of ["stripe_price_id", "unit_amount", "recurring"]) {
 const widgetMigration = fs.readFileSync(path.join(root, "supabase/migrations/20260805000300_embed_widget_and_manual_plan_overrides.sql"), "utf8");
 for (const term of ["user_plan_overrides", "widget_sites", "widget_usage_events", "effective_plan_for_user", "manage_widget_site"]) {
   if (!widgetMigration.includes(term)) throw new Error(`Widget/manual migration missing ${term}`);
+}
+
+
+const speedMigration = fs.readFileSync(path.join(root, "supabase/migrations/20260813000100_translation_speed_and_language_expansion.sql"), "utf8");
+for (const term of ["prepare_translation_request", "prepare_translation_account", "translation_account_for_user", "anonymous_translation_plan", "default_target_language = 'hye'", "target_language = 'en'"]) {
+  if (!speedMigration.includes(term)) throw new Error(`Speed/language migration missing ${term}`);
+}
+
+const languages = fs.readFileSync(path.join(root, "src/lib/languages.ts"), "utf8");
+for (const term of ['{ source: "en", target: "hye" }', '{ source: "hye", target: "en" }']) {
+  if (!languages.includes(term)) throw new Error(`Client language configuration missing ${term}`);
 }
 
 console.log("Static critical billing, privacy, plan-management, widget and translation architecture checks passed.");

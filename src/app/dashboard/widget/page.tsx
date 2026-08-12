@@ -12,7 +12,9 @@ import type { EffectivePlan, WidgetSite, WidgetTheme } from "@/types/database";
 const PAIRS = [
   { source: "en" as const, target: "hyw" as const, label: "English → Western Armenian" },
   { source: "hyw" as const, target: "en" as const, label: "Western Armenian → English" },
-  { source: "hye" as const, target: "hyw" as const, label: "Eastern Armenian → Western Armenian" }
+  { source: "hye" as const, target: "hyw" as const, label: "Eastern Armenian → Western Armenian" },
+  { source: "en" as const, target: "hye" as const, label: "English → Eastern Armenian" },
+  { source: "hye" as const, target: "en" as const, label: "Eastern Armenian → English" }
 ];
 
 interface Draft {

@@ -14,6 +14,8 @@ export default function Home() {
           <span>English → Western Armenian</span>
           <span>Western Armenian → English</span>
           <span>Eastern Armenian → Western Armenian</span>
+          <span>English → Eastern Armenian</span>
+          <span>Eastern Armenian → English</span>
         </div>
       </section>
       <Translator />

@@ -3,10 +3,16 @@ import { LANGUAGE_CODES, type LanguageCode } from "./types.ts";
 export const LANGUAGE_NAMES: Record<LanguageCode, string> = {
   en: "English",
   hyw: "Western Armenian",
-  hye: "Eastern Armenian"
+  hye: "Eastern Armenian",
 };
 
-const SUPPORTED_PAIRS = new Set(["en:hyw", "hyw:en", "hye:hyw"]);
+const SUPPORTED_PAIRS = new Set([
+  "en:hyw",
+  "hyw:en",
+  "hye:hyw",
+  "en:hye",
+  "hye:en",
+]);
 
 export function isLanguageCode(value: unknown): value is LanguageCode {
   return typeof value === "string" && LANGUAGE_CODES.includes(value as LanguageCode);

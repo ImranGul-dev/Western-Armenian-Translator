@@ -24,7 +24,7 @@
 
   var root = host.shadowRoot || host.attachShadow({ mode: "open" });
   var languageNames = { en: "English", hyw: "Western Armenian", hye: "Eastern Armenian" };
-  var allowedTargets = { en: ["hyw"], hyw: ["en"], hye: ["hyw"] };
+  var allowedTargets = { en: ["hyw", "hye"], hyw: ["en"], hye: ["hyw", "en"] };
 
   function element(tag, className, text) {
     var node = document.createElement(tag);
@@ -39,7 +39,7 @@
     "*,*::before,*::after{box-sizing:border-box}",
     ".tun-widget{--red:rgb(219,24,43);--bg:#fff;--surface:#fff;--soft:#f7f7f8;--text:#202124;--muted:#676b73;--border:#d9dadd;--shadow:0 8px 28px rgba(20,24,32,.10);font-family:Nunito,Arial,sans-serif;color:var(--text);background:var(--bg);border:1px solid var(--border);border-top:5px solid var(--red);border-radius:7px;box-shadow:var(--shadow);padding:16px;max-width:760px;width:100%;line-height:1.45}",
     ".tun-widget.dark{--bg:#15171a;--surface:#1d2024;--soft:#24282d;--text:#f4f5f6;--muted:#b4b8be;--border:#3a3f46;--shadow:0 10px 32px rgba(0,0,0,.32)}",
-    ".header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px}.title{font-size:18px;font-weight:800}.brand{font-size:12px;color:var(--muted);font-weight:700}.controls{display:grid;grid-template-columns:minmax(0,1fr) 42px minmax(0,1fr);gap:9px;align-items:end;margin-bottom:12px}.field{display:grid;gap:5px}.field label{font-size:12px;color:var(--muted);font-weight:800}.field select,.input{width:100%;border:1px solid var(--border);border-radius:5px;background:var(--surface);color:var(--text);font:inherit;padding:9px 10px}.swap{height:40px;border:1px solid var(--border);border-radius:5px;background:var(--soft);color:var(--text);font:inherit;font-size:18px;cursor:pointer}.swap:focus-visible,.field select:focus-visible,.input:focus-visible,.translate:focus-visible,.copy:focus-visible{outline:3px solid rgba(219,24,43,.28);outline-offset:2px}.input{min-height:132px;resize:vertical;line-height:1.55}.actions{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px}.count{font-size:12px;color:var(--muted)}.translate{border:0;border-radius:5px;background:var(--red);color:#fff;font:inherit;font-weight:800;padding:10px 18px;cursor:pointer;min-width:126px}.translate:disabled{opacity:.6;cursor:wait}.status{min-height:22px;margin:10px 0 0;font-size:13px;color:var(--muted)}.status.error{color:#b42318}.result{display:none;margin-top:12px;padding:13px;border:1px solid var(--border);border-radius:6px;background:var(--soft)}.result.visible{display:block}.result-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}.result-label{font-size:12px;color:var(--muted);font-weight:800}.copy{border:1px solid var(--border);border-radius:5px;background:var(--surface);color:var(--text);font:inherit;font-size:12px;font-weight:800;padding:6px 9px;cursor:pointer}.result-text{font-family:\"Noto Sans Armenian\",Nunito,Arial,sans-serif;white-space:pre-wrap;overflow-wrap:anywhere;font-size:16px;line-height:1.65}.footer{margin-top:12px;text-align:right;color:var(--muted);font-size:11px}.hidden{display:none!important}",
+    ".header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px}.title{font-size:18px;font-weight:800}.brand{font-size:12px;color:var(--muted);font-weight:700}.controls{display:grid;grid-template-columns:minmax(0,1fr) 42px minmax(0,1fr);gap:9px;align-items:end;margin-bottom:12px}.field{display:grid;gap:5px}.field label{font-size:12px;color:var(--muted);font-weight:800}.field select,.input{width:100%;border:1px solid var(--border);border-radius:5px;background:var(--surface);color:var(--text);font:inherit;padding:9px 10px}.swap{height:40px;border:1px solid var(--border);border-radius:5px;background:var(--soft);color:var(--text);font:inherit;font-size:18px;cursor:pointer}.swap:focus-visible,.field select:focus-visible,.input:focus-visible,.translate:focus-visible,.copy:focus-visible{outline:3px solid rgba(219,24,43,.28);outline-offset:2px}.input{min-height:132px;resize:vertical;line-height:1.55}.actions{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px}.count{font-size:12px;color:var(--muted)}.translate{border:0;border-radius:5px;background:var(--red);color:#fff;font:inherit;font-weight:800;padding:10px 18px;cursor:pointer;min-width:126px}.translate:disabled{opacity:.6;cursor:wait}.status{min-height:22px;margin:10px 0 0;font-size:13px;color:var(--muted)}.status.error{color:#b42318}.result{display:none;margin-top:12px;padding:13px;border:1px solid var(--border);border-radius:6px;background:var(--soft)}.result.visible{display:block}.result-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}.result-label{font-size:12px;color:var(--muted);font-weight:800}.copy{border:1px solid var(--border);border-radius:5px;background:var(--surface);color:var(--text);font:inherit;font-size:12px;font-weight:800;padding:6px 9px;cursor:pointer}.result-text{font-family:\"Noto Sans Armenian\",Nunito,Arial,sans-serif;white-space:pre-wrap;overflow-wrap:anywhere;font-size:16px;line-height:1.65}.transliteration{display:none;margin-top:10px;padding-top:9px;border-top:1px solid var(--border);font-size:14px;line-height:1.55}.transliteration.visible{display:block}.transliteration-label{display:block;margin-bottom:3px;color:var(--muted);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em}.footer{margin-top:12px;text-align:right;color:var(--muted);font-size:11px}.hidden{display:none!important}",
     "@media(max-width:560px){.tun-widget{padding:13px}.controls{grid-template-columns:1fr}.swap{width:42px;justify-self:center;transform:rotate(90deg)}.actions{align-items:stretch;flex-direction:column}.translate{width:100%}.header{align-items:flex-start;flex-direction:column}}",
     "@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}"
   ].join("");
@@ -114,13 +114,93 @@
   resultHead.appendChild(copyButton);
   var resultText = element("div", "result-text");
   resultText.setAttribute("dir", "auto");
+  var resultTransliteration = element("div", "transliteration");
+  resultTransliteration.appendChild(element("span", "transliteration-label", "Latin transliteration"));
+  var resultTransliterationText = element("span", "");
+  resultTransliteration.appendChild(resultTransliterationText);
   result.appendChild(resultHead);
   result.appendChild(resultText);
+  result.appendChild(resultTransliteration);
   widget.appendChild(result);
 
   var footer = element("div", configuredBranding ? "footer" : "footer hidden", "Powered by Tun");
   widget.appendChild(footer);
   root.appendChild(widget);
+
+  var westernArmenianLetters = {
+    "ա":"a","բ":"p","գ":"k","դ":"t","ե":"e","զ":"z","է":"e","ը":"ë","թ":"t'","ժ":"zh","ի":"i","լ":"l","խ":"kh","ծ":"dz","կ":"g","հ":"h","ձ":"ts","ղ":"gh","ճ":"j","մ":"m","յ":"y","ն":"n","շ":"sh","ո":"o","չ":"ch'","պ":"b","ջ":"ch","ռ":"r","ս":"s","վ":"v","տ":"d","ր":"r","ց":"ts'","ւ":"v","փ":"p'","ք":"k'","օ":"o","ֆ":"f"
+  };
+
+  function isArmenianLetter(value) {
+    return /[\u0531-\u0556\u0561-\u0586]/u.test(value);
+  }
+
+  function isUppercaseArmenian(value) {
+    return /[\u0531-\u0556]/u.test(value);
+  }
+
+  function preserveTransliterationCase(source, latin) {
+    if (!isUppercaseArmenian(source) || !latin) return latin;
+    return latin.charAt(0).toUpperCase() + latin.slice(1);
+  }
+
+  function transliterateWesternArmenian(value) {
+    var inputValue = Array.from(String(value || "").normalize("NFC"));
+    var output = "";
+    var previousWasArmenian = false;
+    for (var index = 0; index < inputValue.length; index += 1) {
+      var current = inputValue[index];
+      var lower = current.toLocaleLowerCase("hy-AM");
+      var next = inputValue[index + 1] || "";
+      var nextLower = next.toLocaleLowerCase("hy-AM");
+      var wordStart = !previousWasArmenian;
+      if (lower === "ո" && nextLower === "ւ") {
+        output += preserveTransliterationCase(current, "u");
+        index += 1;
+        previousWasArmenian = true;
+        continue;
+      }
+      if (lower === "ե" && nextLower === "ւ") {
+        output += preserveTransliterationCase(current, wordStart ? "yev" : "ev");
+        index += 1;
+        previousWasArmenian = true;
+        continue;
+      }
+      if (lower === "և") {
+        output += preserveTransliterationCase(current, wordStart ? "yev" : "ev");
+        previousWasArmenian = true;
+        continue;
+      }
+      if (!isArmenianLetter(current)) {
+        output += current;
+        previousWasArmenian = false;
+        continue;
+      }
+      if (lower === "ե") {
+        output += preserveTransliterationCase(current, wordStart ? "ye" : "e");
+        previousWasArmenian = true;
+        continue;
+      }
+      if (lower === "ո") {
+        output += preserveTransliterationCase(current, wordStart ? "vo" : "o");
+        previousWasArmenian = true;
+        continue;
+      }
+      output += preserveTransliterationCase(current, westernArmenianLetters[lower] || current);
+      previousWasArmenian = true;
+    }
+    return output;
+  }
+
+  function updateTransliteration() {
+    if (targetSelect.value === "hyw" && resultText.textContent) {
+      resultTransliterationText.textContent = transliterateWesternArmenian(resultText.textContent);
+      resultTransliteration.classList.add("visible");
+      return;
+    }
+    resultTransliterationText.textContent = "";
+    resultTransliteration.classList.remove("visible");
+  }
 
   function applyTheme() {
     var dark = configuredTheme === "dark" || (configuredTheme === "auto" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
@@ -169,14 +249,16 @@
 
   loadServerConfiguration();
 
-  sourceSelect.addEventListener("change", function () { refreshTargets(""); });
+  sourceSelect.addEventListener("change", function () { refreshTargets(""); updateTransliteration(); });
   swapButton.addEventListener("click", function () {
     var source = sourceSelect.value;
     var target = targetSelect.value;
-    if (source === "en" && target === "hyw") sourceSelect.value = "hyw";
-    else sourceSelect.value = "en";
-    refreshTargets(source === "hyw" ? "hyw" : "en");
+    if (!allowedTargets[target] || allowedTargets[target].indexOf(source) < 0) return;
+    sourceSelect.value = target;
+    refreshTargets(source);
+    updateTransliteration();
   });
+  targetSelect.addEventListener("change", updateTransliteration);
   input.addEventListener("input", function () {
     count.textContent = Array.from(input.value).length.toLocaleString() + " characters";
   });
@@ -224,6 +306,7 @@
     }).then(function (resultValue) {
       if (!resultValue.response.ok || !resultValue.data.success) throw new Error(resultValue.data.error || "This widget is not authorized for this domain or is temporarily unavailable.");
       resultText.textContent = resultValue.data.translation || "";
+      updateTransliteration();
       result.classList.add("visible");
       status.textContent = "Translation complete.";
       setBrandingVisible(resultValue.data.showBranding !== false);

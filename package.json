@@ -9,7 +9,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "tsc --noEmit && node scripts/lint.mjs",
-    "test": "node scripts/test-critical.mjs && node scripts/test-manual-plan.mjs && node --experimental-strip-types scripts/test-widget.mjs",
+    "test": "node scripts/test-critical.mjs && node scripts/test-manual-plan.mjs && node --experimental-strip-types scripts/test-widget.mjs && node --experimental-strip-types scripts/test-transliteration.mjs",
     "verify": "node scripts/verify-project.mjs",
     "zip": "node scripts/create-zip.mjs",
     "supabase:start": "npx supabase start",

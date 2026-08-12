@@ -33,10 +33,11 @@ import {
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { requestTranslation } from "@/lib/translation-api";
 import { countMeaningfulCharacters } from "@/lib/validation";
+import { transliterateWesternArmenian } from "@/lib/western-armenian-transliteration";
 
 import type { UsageSummary } from "@/types/database";
 
-const AUTO_TRANSLATE_DELAY_MS = 200;
+const AUTO_TRANSLATE_DELAY_MS = 180;
 
 function requestSignature(
   text: string,
@@ -111,7 +112,7 @@ export function Translator() {
   /*
    * Realtime-style automatic translation.
    *
-   * 200 ms keeps the interface responsive while still
+   * 180 ms keeps the interface responsive while still
    * avoiding a request for every individual keystroke.
    */
   const debouncedText =
@@ -131,6 +132,9 @@ export function Translator() {
   const last =
     useRef("");
 
+  const active =
+    useRef("");
+
   const maxCharacters =
     maxCharactersFor(
       plan,
@@ -138,6 +142,11 @@ export function Translator() {
       publicSettings.anonymous
         .max_characters_per_request,
     );
+
+  const transliteration =
+    targetLanguage === "hyw" && translation
+      ? transliterateWesternArmenian(translation)
+      : "";
 
   useEffect(() => {
     const supabase =
@@ -208,6 +217,8 @@ export function Translator() {
       abortRef.current =
         null;
 
+      active.current = "";
+
       seq.current += 1;
 
       setLoading(false);
@@ -259,7 +270,8 @@ export function Translator() {
 
         if (
           !force &&
-          signature === last.current
+          (signature === last.current ||
+            signature === active.current)
         ) {
           return;
         }
@@ -278,6 +290,9 @@ export function Translator() {
 
         abortRef.current =
           controller;
+
+        active.current =
+          signature;
 
         const current =
           ++seq.current;
@@ -396,6 +411,9 @@ export function Translator() {
           ) {
             abortRef.current =
               null;
+
+            active.current =
+              "";
 
             setLoading(false);
           }
@@ -534,9 +552,13 @@ export function Translator() {
 
   async function paste() {
     try {
-      textChange(
-        await navigator.clipboard.readText(),
-      );
+      const pasted = Array.from(await navigator.clipboard.readText())
+        .slice(0, maxCharacters)
+        .join("");
+      textChange(pasted);
+      if (countMeaningfulCharacters(pasted) >= 2) {
+        void translate(pasted, true);
+      }
     } catch {
       setError(
         "Clipboard access was blocked. Use Ctrl + V.",
@@ -688,6 +710,7 @@ export function Translator() {
             }
             value={translation}
             loading={loading}
+            transliteration={transliteration}
           />
         </div>
 

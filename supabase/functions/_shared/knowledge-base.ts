@@ -1,51 +1,34 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type {
-  LanguageCode,
-  TranslationContext,
-} from "./types.ts";
+import type { LanguageCode, TranslationContext } from "./types.ts";
 
 const EMPTY: TranslationContext = {
   glossary: [],
   grammarRules: [],
   approvedExamples: [],
+  exactTranslation: null,
 };
 
-/*
- * Keep translation context intentionally small.
- *
- * Relevant approved terminology is still included, but we avoid
- * sending a large language-reference packet with every request.
- */
-const SHORT_TEXT_THRESHOLD = 120;
+const VERY_SHORT_TEXT_THRESHOLD = 80;
+const NORMAL_TEXT_THRESHOLD = 600;
+const MAX_CONTEXT_JSON_CHARACTERS = 7_000;
 
-const SHORT_TEXT_LIMITS = {
-  glossary: 6,
-  examples: 2,
-  rules: 2,
-};
-
-const NORMAL_TEXT_LIMITS = {
-  glossary: 8,
-  examples: 3,
-  rules: 3,
-};
-
-const MAX_CONTEXT_JSON_CHARACTERS = 9_000;
+const VERY_SHORT_LIMITS = { glossary: 4, examples: 1, rules: 1 };
+const NORMAL_LIMITS = { glossary: 6, examples: 2, rules: 2 };
+const LONG_LIMITS = { glossary: 8, examples: 3, rules: 3 };
 
 function arr<T>(value: unknown): T[] {
-  return Array.isArray(value)
-    ? (value as T[])
-    : [];
+  return Array.isArray(value) ? value as T[] : [];
 }
 
 function limitsForText(text: string) {
-  const meaningfulLength = Array.from(
-    text.trim(),
-  ).length;
+  const length = Array.from(text.trim()).length;
+  if (length <= VERY_SHORT_TEXT_THRESHOLD) return VERY_SHORT_LIMITS;
+  if (length <= NORMAL_TEXT_THRESHOLD) return NORMAL_LIMITS;
+  return LONG_LIMITS;
+}
 
-  return meaningfulLength <= SHORT_TEXT_THRESHOLD
-    ? SHORT_TEXT_LIMITS
-    : NORMAL_TEXT_LIMITS;
+function normalizeExact(value: string): string {
+  return value.normalize("NFC").trim().toLocaleLowerCase("hy-AM");
 }
 
 export async function findRelevantContext(
@@ -55,61 +38,35 @@ export async function findRelevantContext(
   target: LanguageCode,
 ): Promise<TranslationContext> {
   const limits = limitsForText(text);
+  const { data, error } = await admin.rpc("find_translation_context", {
+    p_text: text,
+    p_source_language: source,
+    p_target_language: target,
+    p_glossary_limit: limits.glossary,
+    p_example_limit: limits.examples,
+    p_rule_limit: limits.rules,
+  });
 
-  const { data, error } = await admin.rpc(
-    "find_translation_context",
-    {
-      p_text: text,
-      p_source_language: source,
-      p_target_language: target,
-      p_glossary_limit: limits.glossary,
-      p_example_limit: limits.examples,
-      p_rule_limit: limits.rules,
-    },
-  );
+  if (error || !data || typeof data !== "object" || Array.isArray(data)) return EMPTY;
 
-  /*
-   * Context is supplemental. A temporary knowledge-base lookup
-   * problem should not stop translation completely.
-   */
-  if (
-    error ||
-    !data ||
-    typeof data !== "object" ||
-    Array.isArray(data)
-  ) {
-    return EMPTY;
-  }
-
-  const result = data as Record<
-    string,
-    unknown
-  >;
+  const result = data as Record<string, unknown>;
+  const approvedExamples = arr<TranslationContext["approvedExamples"][number]>(result.approvedExamples);
+  const normalizedSource = normalizeExact(text);
+  const exact = approvedExamples.find((example) => normalizeExact(example.sourceText) === normalizedSource);
 
   const context: TranslationContext = {
     glossary: arr(result.glossary),
     grammarRules: arr(result.grammarRules),
-    approvedExamples: arr(
-      result.approvedExamples,
-    ),
+    approvedExamples,
+    exactTranslation: exact?.targetText ?? null,
   };
 
-  /*
-   * Defensive protection against an unexpectedly large database
-   * response. The translation prompt has its own cap too, but
-   * keeping the payload small here saves processing before the
-   * OpenAI request is constructed.
-   */
-  if (
-    JSON.stringify(context).length >
-    MAX_CONTEXT_JSON_CHARACTERS
-  ) {
+  if (JSON.stringify(context).length > MAX_CONTEXT_JSON_CHARACTERS) {
     return {
-      glossary: context.glossary.slice(0, 6),
-      grammarRules:
-        context.grammarRules.slice(0, 2),
-      approvedExamples:
-        context.approvedExamples.slice(0, 2),
+      glossary: context.glossary.slice(0, 5),
+      grammarRules: context.grammarRules.slice(0, 2),
+      approvedExamples: context.approvedExamples.slice(0, 2),
+      exactTranslation: context.exactTranslation,
     };
   }
 

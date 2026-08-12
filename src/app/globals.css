@@ -298,6 +298,15 @@ html.dark .theme-icon-sun { opacity: 1; transform: scale(1); }
   line-height: 1.65;
 }
 .output-placeholder { color: var(--text-muted); opacity: 0.72; }
+.transliteration-block {
+  margin: 0 24px 14px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--border);
+  display: grid;
+  gap: 4px;
+}
+.transliteration-label { color: var(--text-muted); font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.transliteration-text { color: var(--text); font-size: 15px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
 .armenian-text { font-family: "Noto Sans Armenian", "Nunito", sans-serif !important; letter-spacing: 0.002em; }
 .panel-footer-row {
   min-height: 40px;
@@ -419,6 +428,7 @@ html.dark .theme-icon-sun { opacity: 1; transform: scale(1); }
   .panel-action span:last-child { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
   .panel-body textarea, .translation-output { padding: 18px 16px 10px; font-size: 17px; }
   .panel-footer-row { padding-inline: 16px; }
+  .transliteration-block { margin-inline: 16px; }
   .keyboard-hint { display: none; }
   .translator-bottom-bar { padding: 9px 11px 9px 14px; }
   .mobile-translate-button { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }

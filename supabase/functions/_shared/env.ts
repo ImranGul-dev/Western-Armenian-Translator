@@ -38,7 +38,7 @@ export function getRuntimeConfig() {
 
   return {
     openAiApiKey: Deno.env.get("OPENAI_API_KEY")?.trim() ?? "",
-    openAiModel: Deno.env.get("OPENAI_MODEL")?.trim() || "gpt-5-mini",
+    openAiModel: Deno.env.get("OPENAI_MODEL")?.trim() || "gpt-5.4",
     openAiTimeoutMs: parseNumber(Deno.env.get("OPENAI_TIMEOUT_MS"), 30_000, 5_000, 120_000),
     inputCostPerMillion: parseNumber(Deno.env.get("OPENAI_INPUT_COST_PER_MILLION"), 0, 0, 1000),
     outputCostPerMillion: parseNumber(Deno.env.get("OPENAI_OUTPUT_COST_PER_MILLION"), 0, 0, 1000),

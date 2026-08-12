@@ -27,6 +27,10 @@ assert.ok(!migration.match(/widget_usage_events[\s\S]{0,1200}(source_text|transl
 assert.ok(script.includes("attachShadow"), "Widget script must use Shadow DOM");
 assert.ok(script.includes("data-widget-key"), "Widget script must accept a public widget key");
 assert.ok(script.includes("navigator.clipboard"), "Widget script must include copy support");
+assert.ok(script.includes('en: ["hyw", "hye"]'), "Widget script must support English → Eastern Armenian");
+assert.ok(script.includes('hye: ["hyw", "en"]'), "Widget script must support Eastern Armenian → English");
+assert.ok(script.includes("transliterateWesternArmenian"), "Widget script must display Western Armenian Latin transliteration");
+
 assert.ok(script.includes("loadServerConfiguration"), "Widget script must load server-authoritative branding configuration");
 assert.ok(script.includes("setBrandingVisible(resultValue.data.showBranding !== false)"), "Widget branding must follow the validated server response");
 assert.ok(!script.includes("innerHTML"), "Widget script must not use innerHTML");

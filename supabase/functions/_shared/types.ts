@@ -39,6 +39,7 @@ export interface TranslationContext {
   glossary: GlossaryContextItem[];
   grammarRules: GrammarContextItem[];
   approvedExamples: ExampleContextItem[];
+  exactTranslation?: string | null;
 }
 
 export interface RateLimitResult {

@@ -4,7 +4,7 @@ A production-oriented Tun-branded translation SaaS built with Next.js App Router
 
 ## Preserved product areas
 
-The application supports English ↔ Western Armenian and Eastern Armenian → Western Armenian, approved glossary/rule/example retrieval, prompt-injection safeguards, anonymous and account usage limits, history, favorites, feedback, roles, privacy-controlled query review, knowledge administration, direct Stripe Checkout/Portal/webhooks/refunds, billing-disabled mode, manual plan grants, and secure website widgets.
+The application supports English ↔ Western Armenian, English ↔ Eastern Armenian, and Eastern Armenian → Western Armenian, with Western Armenian Latin transliteration, approved glossary/rule/example retrieval, prompt-injection safeguards, anonymous and account usage limits, history, favorites, feedback, roles, privacy-controlled query review, knowledge administration, direct Stripe Checkout/Portal/webhooks/refunds, billing-disabled mode, manual plan grants, and secure website widgets.
 
 ## New production features
 
