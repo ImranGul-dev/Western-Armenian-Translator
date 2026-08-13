@@ -31,13 +31,20 @@ import {
 } from "@/lib/plans";
 
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
-import { requestTranslation } from "@/lib/translation-api";
+
+import {
+  requestTranslation,
+  type GuestUsage,
+  type TranslationApiError,
+} from "@/lib/translation-api";
+
 import { countMeaningfulCharacters } from "@/lib/validation";
 import { transliterateWesternArmenian } from "@/lib/western-armenian-transliteration";
 
 import type { UsageSummary } from "@/types/database";
 
 const AUTO_TRANSLATE_DELAY_MS = 180;
+const GUEST_FREE_TRANSLATION_LIMIT = 5;
 
 function requestSignature(
   text: string,
@@ -87,6 +94,13 @@ export function Translator() {
   );
 
   const [
+    guestUsage,
+    setGuestUsage,
+  ] = useState<GuestUsage | null>(
+    null,
+  );
+
+  const [
     publicSettings,
     setPublicSettings,
   ] =
@@ -112,8 +126,8 @@ export function Translator() {
   /*
    * Realtime-style automatic translation.
    *
-   * 180 ms keeps the interface responsive while still
-   * avoiding a request for every individual keystroke.
+   * 180 ms keeps the paid/logged-in experience
+   * very responsive.
    */
   const debouncedText =
     useDebouncedValue(
@@ -144,9 +158,17 @@ export function Translator() {
     );
 
   const transliteration =
-    targetLanguage === "hyw" && translation
-      ? transliterateWesternArmenian(translation)
+    targetLanguage === "hyw" &&
+      translation
+      ? transliterateWesternArmenian(
+          translation,
+        )
       : "";
+
+  const guestLimitReached =
+    !profile &&
+    guestUsage !== null &&
+    guestUsage.remaining <= 0;
 
   useEffect(() => {
     const supabase =
@@ -210,6 +232,16 @@ export function Translator() {
     }
   }, []);
 
+  /*
+   * If a guest signs in without the component
+   * remounting, remove the guest-only counter.
+   */
+  useEffect(() => {
+    if (profile) {
+      setGuestUsage(null);
+    }
+  }, [profile]);
+
   const cancel =
     useCallback(() => {
       abortRef.current?.abort();
@@ -248,6 +280,27 @@ export function Translator() {
           return;
         }
 
+        /*
+         * Once a guest has definitely reached
+         * five translations, do not keep sending
+         * extra requests from the browser.
+         *
+         * The backend still remains the real
+         * security/source-of-truth check.
+         */
+        if (
+          !profile &&
+          guestLimitReached
+        ) {
+          setError(
+            "You have used all 5 free translations for today. Sign up or log in to continue.",
+          );
+
+          setUpgrade(true);
+
+          return;
+        }
+
         if (
           Array.from(text).length >
           maxCharacters
@@ -270,8 +323,12 @@ export function Translator() {
 
         if (
           !force &&
-          (signature === last.current ||
-            signature === active.current)
+          (
+            signature ===
+              last.current ||
+            signature ===
+              active.current
+          )
         ) {
           return;
         }
@@ -279,9 +336,10 @@ export function Translator() {
         /*
          * Cancel any previous translation stream.
          *
-         * This is important for realtime translation:
-         * if the user keeps typing, old OpenAI output should
-         * never overwrite the translation for the new text.
+         * This is important for realtime
+         * translation: old OpenAI output must
+         * never overwrite translation for newly
+         * typed text.
          */
         abortRef.current?.abort();
 
@@ -302,9 +360,9 @@ export function Translator() {
         setUpgrade(false);
 
         /*
-         * Remove the previous completed translation so the
-         * panel can immediately begin displaying the new
-         * streamed translation.
+         * Clear the previous completed result so
+         * the new streamed response can appear
+         * immediately.
          */
         setTranslation("");
         setRequestId("");
@@ -323,17 +381,14 @@ export function Translator() {
               session?.access_token,
 
               /*
-               * STREAMING CALLBACK
+               * Streaming callback.
                *
-               * requestTranslation() calls this repeatedly as
+               * This is called repeatedly as
                * OpenAI translation deltas arrive.
                */
               (
                 partialTranslation,
               ) => {
-                /*
-                 * Ignore chunks belonging to an old request.
-                 */
                 if (
                   current !==
                     seq.current ||
@@ -349,7 +404,8 @@ export function Translator() {
             );
 
           if (
-            current !== seq.current ||
+            current !==
+              seq.current ||
             controller.signal.aborted
           ) {
             return;
@@ -358,11 +414,6 @@ export function Translator() {
           last.current =
             signature;
 
-          /*
-           * Replace the progressively assembled text with the
-           * canonical final translation returned by the Edge
-           * Function.
-           */
           setTranslation(
             data.translation,
           );
@@ -374,6 +425,20 @@ export function Translator() {
           setUsage(
             data.usage ?? null,
           );
+
+          /*
+           * Guests receive their successful
+           * daily translation count from the
+           * backend.
+           */
+          if (!profile) {
+            setGuestUsage(
+              data.guestUsage ??
+                null,
+            );
+          } else {
+            setGuestUsage(null);
+          }
         } catch (cause) {
           if (
             controller.signal.aborted ||
@@ -383,17 +448,32 @@ export function Translator() {
           }
 
           /*
-           * A partial streamed translation must not remain on
-           * screen as though it were a completed translation
-           * if the request fails halfway through.
+           * A partial streamed translation must
+           * not remain on screen if the request
+           * ultimately fails.
            */
           setTranslation("");
           setRequestId("");
 
           const failure =
-            cause as Error & {
-              upgradeRecommended?: boolean;
-            };
+            cause as TranslationApiError;
+
+          /*
+           * The backend also returns guestUsage
+           * when the sixth request is blocked.
+           *
+           * This makes sure the interface still
+           * shows "5 of 5" instead of losing the
+           * counter on an error.
+           */
+          if (
+            !profile &&
+            failure.guestUsage
+          ) {
+            setGuestUsage(
+              failure.guestUsage,
+            );
+          }
 
           setError(
             failure.message ||
@@ -421,7 +501,9 @@ export function Translator() {
       },
       [
         cancel,
+        guestLimitReached,
         maxCharacters,
+        profile,
         session?.access_token,
         sourceLanguage,
         targetLanguage,
@@ -429,13 +511,18 @@ export function Translator() {
     );
 
   /*
-   * Automatically translate shortly after the user stops
-   * typing.
+   * Logged-in users keep realtime automatic
+   * translation while typing.
+   *
+   * Guests use the Translate button, Ctrl+Enter,
+   * or Paste so normal typing pauses do not
+   * accidentally consume several of their five
+   * daily translations.
    */
   useEffect(() => {
     if (
-      debouncedText ===
-      sourceText
+      profile &&
+      debouncedText === sourceText
     ) {
       void translate(
         debouncedText,
@@ -447,10 +534,11 @@ export function Translator() {
     sourceLanguage,
     targetLanguage,
     translate,
+    profile,
   ]);
 
   /*
-   * Abort an active translation stream when the component
+   * Abort an active stream when the component
    * leaves the page.
    */
   useEffect(
@@ -526,8 +614,8 @@ export function Translator() {
     value: string,
   ) {
     /*
-     * Immediately stop the previous stream when the user
-     * types another character.
+     * Immediately stop the previous stream when
+     * another character is typed.
      */
     cancel();
 
@@ -552,12 +640,27 @@ export function Translator() {
 
   async function paste() {
     try {
-      const pasted = Array.from(await navigator.clipboard.readText())
-        .slice(0, maxCharacters)
-        .join("");
+      const pasted =
+        Array.from(
+          await navigator.clipboard.readText(),
+        )
+          .slice(
+            0,
+            maxCharacters,
+          )
+          .join("");
+
       textChange(pasted);
-      if (countMeaningfulCharacters(pasted) >= 2) {
-        void translate(pasted, true);
+
+      if (
+        countMeaningfulCharacters(
+          pasted,
+        ) >= 2
+      ) {
+        void translate(
+          pasted,
+          true,
+        );
       }
     } catch {
       setError(
@@ -625,12 +728,17 @@ export function Translator() {
 
             <span className="toolbar-note">
               {profile
-                ? `${plan?.name ?? "Free"} plan · history ${
+                ? `${
+                    plan?.name ??
+                    "Free"
+                  } plan · history ${
                     profile.history_enabled
                       ? "on"
                       : "off"
                   }`
-                : "Free access · sign in to save history"}
+                : guestUsage
+                  ? `${guestUsage.used} of ${guestUsage.limit} free translations used today`
+                  : `${GUEST_FREE_TRANSLATION_LIMIT} free translations per day · sign in for more`}
             </span>
           </div>
 
@@ -645,6 +753,7 @@ export function Translator() {
             }
             disabled={
               loading ||
+              guestLimitReached ||
               countMeaningfulCharacters(
                 sourceText,
               ) < 2
@@ -652,7 +761,9 @@ export function Translator() {
           >
             {loading
               ? "Translating…"
-              : "Translate"}
+              : guestLimitReached
+                ? "Free limit reached"
+                : "Translate"}
           </button>
         </div>
 
@@ -661,7 +772,9 @@ export function Translator() {
             mode="input"
             languageLabel="Translate from"
             languageId="source-language"
-            language={sourceLanguage}
+            language={
+              sourceLanguage
+            }
             languageOptions={[
               "en",
               "hyw",
@@ -701,16 +814,22 @@ export function Translator() {
             mode="output"
             languageLabel="Translate to"
             languageId="target-language"
-            language={targetLanguage}
-            languageOptions={getTargetsForSource(
-              sourceLanguage,
-            )}
+            language={
+              targetLanguage
+            }
+            languageOptions={
+              getTargetsForSource(
+                sourceLanguage,
+              )
+            }
             onLanguageChange={
               targetChange
             }
             value={translation}
             loading={loading}
-            transliteration={transliteration}
+            transliteration={
+              transliteration
+            }
           />
         </div>
 
@@ -718,9 +837,11 @@ export function Translator() {
           <StatusMessage
             loading={loading}
             error={error}
-            hasTranslation={Boolean(
-              translation,
-            )}
+            hasTranslation={
+              Boolean(
+                translation,
+              )
+            }
             onRetry={() =>
               void translate(
                 sourceText,
@@ -740,6 +861,7 @@ export function Translator() {
             }
             disabled={
               loading ||
+              guestLimitReached ||
               countMeaningfulCharacters(
                 sourceText,
               ) < 2
@@ -747,27 +869,69 @@ export function Translator() {
           >
             {loading
               ? "Translating…"
-              : "Translate"}
+              : guestLimitReached
+                ? "Free limit reached"
+                : "Translate"}
           </button>
         </div>
       </div>
 
       {upgrade && (
         <div className="upgrade-notice">
-          Your current limit blocked
-          this request.{" "}
+          {guestLimitReached
+            ? "You have used all 5 free translations for today. "
+            : "Your current limit blocked this request. "}
 
           {profile ? (
             <Link href="/pricing">
               Compare plans
             </Link>
           ) : (
-            <Link href="/signup?next=%2Fpricing">
-              Create an account and
-              choose a plan
-            </Link>
+            <>
+              <Link href="/signup?next=%2Fpricing">
+                Create an account
+              </Link>
+
+              {" or "}
+
+              <Link href="/login">
+                log in
+              </Link>
+
+              {" to continue"}
+            </>
           )}
           .
+        </div>
+      )}
+
+      {!profile && (
+        <div className="translator-usage">
+          <div
+            className="guest-translation-usage"
+            aria-live="polite"
+          >
+            <div>
+              <strong>
+                {guestUsage
+                  ? `${guestUsage.used} of ${guestUsage.limit}`
+                  : `0 of ${GUEST_FREE_TRANSLATION_LIMIT}`}
+              </strong>{" "}
+              free translations used today
+            </div>
+
+            <div className="toolbar-note">
+              {guestUsage
+                ? guestUsage.remaining > 0
+                  ? `${guestUsage.remaining} free ${
+                      guestUsage.remaining === 1
+                        ? "translation"
+                        : "translations"
+                    } remaining today`
+                  : "Free limit reached. Sign up or log in to continue translating."
+                : `${GUEST_FREE_TRANSLATION_LIMIT} free translations available today`}
+            </div>
+          </div>
         </div>
       )}
 
