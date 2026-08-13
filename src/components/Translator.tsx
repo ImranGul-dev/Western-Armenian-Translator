@@ -123,6 +123,11 @@ export function Translator() {
     setUpgrade,
   ] = useState(false);
 
+  const [
+    upgradeModalOpen,
+    setUpgradeModalOpen,
+  ] = useState(false);
+
   /*
    * Realtime-style automatic translation.
    *
@@ -239,8 +244,27 @@ export function Translator() {
   useEffect(() => {
     if (profile) {
       setGuestUsage(null);
+      setUpgradeModalOpen(false);
     }
   }, [profile]);
+
+  useEffect(() => {
+    if (!upgradeModalOpen) {
+      return;
+    }
+
+    const handleEscape = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setUpgradeModalOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleEscape);
+
+    return () => {
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, [upgradeModalOpen]);
 
   const cancel =
     useCallback(() => {
@@ -292,11 +316,9 @@ export function Translator() {
           !profile &&
           guestLimitReached
         ) {
-          setError(
-            "You have used all 5 free translations for today. Sign up or log in to continue.",
-          );
-
-          setUpgrade(true);
+          setError("");
+          setUpgrade(false);
+          setUpgradeModalOpen(true);
 
           return;
         }
@@ -475,16 +497,25 @@ export function Translator() {
             );
           }
 
-          setError(
-            failure.message ||
-              "Translation failed.",
-          );
+          if (
+            !profile &&
+            failure.code === "guest_translation_limit"
+          ) {
+            setError("");
+            setUpgrade(false);
+            setUpgradeModalOpen(true);
+          } else {
+            setError(
+              failure.message ||
+                "Translation failed.",
+            );
 
-          setUpgrade(
-            Boolean(
-              failure.upgradeRecommended,
-            ),
-          );
+            setUpgrade(
+              Boolean(
+                failure.upgradeRecommended,
+              ),
+            );
+          }
         } finally {
           if (
             current === seq.current
@@ -753,7 +784,6 @@ export function Translator() {
             }
             disabled={
               loading ||
-              guestLimitReached ||
               countMeaningfulCharacters(
                 sourceText,
               ) < 2
@@ -762,7 +792,7 @@ export function Translator() {
             {loading
               ? "Translating…"
               : guestLimitReached
-                ? "Free limit reached"
+                ? "Upgrade to continue"
                 : "Translate"}
           </button>
         </div>
@@ -861,7 +891,6 @@ export function Translator() {
             }
             disabled={
               loading ||
-              guestLimitReached ||
               countMeaningfulCharacters(
                 sourceText,
               ) < 2
@@ -870,17 +899,15 @@ export function Translator() {
             {loading
               ? "Translating…"
               : guestLimitReached
-                ? "Free limit reached"
+                ? "Upgrade to continue"
                 : "Translate"}
           </button>
         </div>
       </div>
 
-      {upgrade && (
+      {upgrade && !guestLimitReached && (
         <div className="upgrade-notice">
-          {guestLimitReached
-            ? "You have used all 5 free translations for today. "
-            : "Your current limit blocked this request. "}
+          Your current limit blocked this request.{" "}
 
           {profile ? (
             <Link href="/pricing">
@@ -928,7 +955,7 @@ export function Translator() {
                         ? "translation"
                         : "translations"
                     } remaining today`
-                  : "Free limit reached. Sign up or log in to continue translating."
+                  : "Free limit reached. Click Translate to view upgrade options."
                 : `${GUEST_FREE_TRANSLATION_LIMIT} free translations available today`}
             </div>
           </div>
@@ -941,6 +968,80 @@ export function Translator() {
             usage={usage}
             compact
           />
+        </div>
+      )}
+
+      {upgradeModalOpen && !profile && (
+        <div
+          className="upgrade-modal-backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setUpgradeModalOpen(false);
+            }
+          }}
+        >
+          <section
+            className="upgrade-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="upgrade-modal-title"
+            aria-describedby="upgrade-modal-description"
+          >
+            <button
+              type="button"
+              className="upgrade-modal-close"
+              aria-label="Close upgrade options"
+              onClick={() => setUpgradeModalOpen(false)}
+            >
+              ×
+            </button>
+
+            <p className="eyebrow">
+              Free limit reached
+            </p>
+
+            <h2 id="upgrade-modal-title">
+              Keep translating with a premium plan
+            </h2>
+
+            <p
+              id="upgrade-modal-description"
+              className="upgrade-modal-copy"
+            >
+              You have used your 5 free translations for today.
+              Choose a plan to unlock a larger translation allowance
+              and expanded account features.
+            </p>
+
+            <ul className="upgrade-modal-features">
+              <li>Larger translation allowance</li>
+              <li>Full translation history</li>
+              <li>Saved favourites and expanded account tools</li>
+            </ul>
+
+            <div className="upgrade-modal-actions">
+              <Link
+                href="/pricing"
+                className="primary-button upgrade-modal-primary"
+                onClick={() => setUpgradeModalOpen(false)}
+              >
+                View plans
+              </Link>
+
+              <button
+                type="button"
+                className="upgrade-modal-secondary"
+                onClick={() => setUpgradeModalOpen(false)}
+              >
+                Maybe later
+              </button>
+            </div>
+
+            <p className="upgrade-modal-note">
+              You will create or log in to your account before completing a paid plan.
+            </p>
+          </section>
         </div>
       )}
 
