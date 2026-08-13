@@ -40,23 +40,25 @@ export default function PricingPage() {
     : Object.values(FALLBACK_PLANS).map((plan, index) => ({ ...plan, id: `${plan.slug}${index}` }));
 
   async function beginBilling(slug: "premium" | "business") {
-    if (!billingEnabled) {
-      setMessage("Online subscription checkout is disabled until Stripe billing is activated.");
-      return;
-    }
     if (!session) {
       const next = `/pricing?plan=${slug}`;
       location.href = `/signup?next=${encodeURIComponent(next)}`;
       return;
     }
 
+    if (!billingEnabled) {
+      setMessage("Online subscription checkout is disabled until billing is activated.");
+      return;
+    }
+
     setBusy(slug);
     setMessage("");
+
     try {
       if (current?.source === "stripe" && (current.slug === "premium" || current.slug === "business")) {
         location.href = await openBillingPortal(session, "subscription_update");
       } else {
-        // Manual application access remains separate. Checkout creates a real Stripe subscription
+        // Manual application access remains separate. Checkout creates a real subscription
         // while the manual override continues to take priority until it is removed or expires.
         location.href = await startCheckout(session, slug);
       }
@@ -82,21 +84,37 @@ export default function PricingPage() {
         <h1>Choose your translation plan</h1>
         <p>Upgrade for a larger monthly allowance, longer requests and expanded account features.</p>
       </section>
+
       {message && <div className="info-banner">{message}</div>}
+
       <div className="pricing-grid">
         {display.map(plan => {
           const sameEffectivePlan = current?.slug === plan.slug;
           const sameStripePlan = sameEffectivePlan && current?.source === "stripe";
+
           return (
             <article className={`pricing-card ${sameEffectivePlan ? "current" : ""}`} key={plan.slug}>
               <div>
                 <span className="plan-label">
-                  {sameStripePlan ? "Current plan" : sameEffectivePlan && current?.source === "manual" ? "Manual access" : plan.name}
+                  {sameStripePlan
+                    ? "Current plan"
+                    : sameEffectivePlan && current?.source === "manual"
+                      ? "Manual access"
+                      : plan.name}
                 </span>
+
                 <h2>{plan.name}</h2>
-                <div className="price">{formatPrice(plan)}<span>/{plan.billing_interval || "month"}</span></div>
+
+                <div className="price">
+                  {formatPrice(plan)}
+                  <span>/{plan.billing_interval || "month"}</span>
+                </div>
               </div>
-              <ul>{plan.features.map(feature => <li key={feature}>✓ {feature}</li>)}</ul>
+
+              <ul>
+                {plan.features.map(feature => <li key={feature}>✓ {feature}</li>)}
+              </ul>
+
               <button
                 className="primary-button full-button"
                 disabled={sameStripePlan || plan.slug === "free" || !!busy}
@@ -106,15 +124,17 @@ export default function PricingPage() {
                   ? "Current plan"
                   : plan.slug === "free"
                     ? "Included"
-                    : !billingEnabled
-                      ? "Billing disabled"
-                      : busy === plan.slug
-                        ? "Opening billing…"
-                        : sameEffectivePlan && current?.source === "manual"
-                          ? "Subscribe with Stripe"
-                          : current?.source === "stripe" && (current.slug === "premium" || current.slug === "business")
-                            ? "Change plan"
-                            : "Choose plan"}
+                    : !session
+                      ? "Choose plan"
+                      : !billingEnabled
+                        ? "Billing unavailable"
+                        : busy === plan.slug
+                          ? "Opening billing…"
+                          : sameEffectivePlan && current?.source === "manual"
+                            ? "Subscribe"
+                            : current?.source === "stripe" && (current.slug === "premium" || current.slug === "business")
+                              ? "Change plan"
+                              : "Choose plan"}
               </button>
             </article>
           );
