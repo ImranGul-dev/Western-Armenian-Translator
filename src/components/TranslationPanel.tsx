@@ -1,4 +1,4 @@
-﻿import type { ChangeEvent, KeyboardEvent, ReactNode } from "react";
+import type { ChangeEvent, KeyboardEvent, ReactNode } from "react";
 import { CharacterCounter } from "@/components/CharacterCounter";
 import { CopyButton } from "@/components/CopyButton";
 import { LanguageSelector } from "@/components/LanguageSelector";
@@ -47,8 +47,8 @@ export function TranslationPanel(props: Props) {
       />
       <div className="panel-actions">
         {props.mode === "input" ? <>
-          <button type="button" onClick={props.onPaste} className="panel-action" aria-label="Paste text"><span>â–£</span><span>Paste</span></button>
-          <button type="button" onClick={props.onClear} disabled={!props.value} className="panel-action"><span>Ã—</span><span>Clear</span></button>
+          <button type="button" onClick={props.onPaste} className="panel-action" aria-label="Paste text"><span>{"\u25A3"}</span><span>Paste</span></button>
+          <button type="button" onClick={props.onClear} disabled={!props.value} className="panel-action"><span>{"\u00D7"}</span><span>Clear</span></button>
         </> : <CopyButton text={props.value} disabled={props.loading && !props.value} />}
       </div>
     </div>
@@ -62,11 +62,11 @@ export function TranslationPanel(props: Props) {
         onKeyDown={props.onKeyDown}
         maxLength={props.maxCharacters}
         className={armenian ? "armenian-text" : undefined}
-        placeholder="Enter or paste textâ€¦"
+        placeholder="Enter or paste text..."
         spellCheck
       />
       <div className="panel-footer-row">
-        <span className="keyboard-hint">Ctrl + Enter Â· limit {props.maxCharacters.toLocaleString()}</span>
+        <span className="keyboard-hint">{props.keyboardHint ? `${props.keyboardHint} - ` : ""}limit {props.maxCharacters.toLocaleString()}</span>
         <CharacterCounter count={Array.from(props.value).length} max={props.maxCharacters} />
       </div>
     </div> : <div className="panel-body output-body" aria-busy={props.loading}>

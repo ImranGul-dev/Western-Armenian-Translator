@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import {
@@ -768,14 +768,14 @@ export function Translator() {
                 ? `${
                     plan?.name ??
                     "Free"
-                  } plan Â· history ${
+                  } plan | history ${
                     profile.history_enabled
                       ? "on"
                       : "off"
                   }`
                 : guestUsage
                   ? `${guestUsage.used} of ${guestUsage.limit} free translations used today`
-                  : `${GUEST_FREE_TRANSLATION_LIMIT} free translations per day Â· sign in for more`}
+                  : `${GUEST_FREE_TRANSLATION_LIMIT} free translations per day | sign in for more`}
             </span>
           </div>
 
@@ -796,7 +796,7 @@ export function Translator() {
             }
           >
             {loading
-              ? "Translatingâ€¦"
+              ? "Translating..."
               : guestLimitReached
                 ? "Upgrade to continue"
                 : "Translate"}
@@ -835,7 +835,7 @@ export function Translator() {
             keyboardHint={
               profile
                 ? "Automatic translation while typing"
-                : "Enter to translate · Shift + Enter for new line"
+                : "Enter to translate - Shift + Enter for new line"
             }
           />
 
@@ -908,7 +908,7 @@ export function Translator() {
             }
           >
             {loading
-              ? "Translatingâ€¦"
+              ? "Translating..."
               : guestLimitReached
                 ? "Upgrade to continue"
                 : "Translate"}
@@ -1005,8 +1005,7 @@ export function Translator() {
               aria-label="Close upgrade options"
               onClick={() => setUpgradeModalOpen(false)}
             >
-              Ã—
-            </button>
+              {"\u00D7"}</button>
 
             <p className="eyebrow">
               Free limit reached
