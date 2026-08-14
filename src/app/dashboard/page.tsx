@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -128,21 +128,6 @@ export default function Dashboard() {
           <article className="stat-card">
             <span>Account role</span>
             <strong>{profile?.role.replace("_", " ")}</strong>
-          </article>
-
-          <article className="stat-card">
-            <span>Website widget</span>
-            <strong>
-              {plan?.widget_enabled
-                ? `${plan.widget_site_limit} site${
-                    plan.widget_site_limit === 1 ? "" : "s"
-                  }`
-                : "Not included"}
-            </strong>
-
-            {plan?.widget_enabled && (
-              <Link href="/dashboard/widget">Manage widgets</Link>
-            )}
           </article>
         </div>
 
