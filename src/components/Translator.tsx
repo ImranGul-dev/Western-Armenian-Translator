@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import {
@@ -545,7 +545,7 @@ export function Translator() {
    * Logged-in users keep realtime automatic
    * translation while typing.
    *
-   * Guests use the Translate button, Ctrl+Enter,
+   * Guests use the Translate button, Enter,
    * or Paste so normal typing pauses do not
    * accidentally consume several of their five
    * daily translations.
@@ -736,10 +736,16 @@ export function Translator() {
     event: KeyboardEvent<HTMLTextAreaElement>,
   ) {
     if (
-      event.ctrlKey &&
-      event.key === "Enter"
+      !profile &&
+      event.key === "Enter" &&
+      !event.shiftKey &&
+      !event.nativeEvent.isComposing
     ) {
       event.preventDefault();
+
+      if (loading) {
+        return;
+      }
 
       void translate(
         sourceText,
@@ -762,14 +768,14 @@ export function Translator() {
                 ? `${
                     plan?.name ??
                     "Free"
-                  } plan · history ${
+                  } plan Â· history ${
                     profile.history_enabled
                       ? "on"
                       : "off"
                   }`
                 : guestUsage
                   ? `${guestUsage.used} of ${guestUsage.limit} free translations used today`
-                  : `${GUEST_FREE_TRANSLATION_LIMIT} free translations per day · sign in for more`}
+                  : `${GUEST_FREE_TRANSLATION_LIMIT} free translations per day Â· sign in for more`}
             </span>
           </div>
 
@@ -790,7 +796,7 @@ export function Translator() {
             }
           >
             {loading
-              ? "Translating…"
+              ? "Translatingâ€¦"
               : guestLimitReached
                 ? "Upgrade to continue"
                 : "Translate"}
@@ -897,7 +903,7 @@ export function Translator() {
             }
           >
             {loading
-              ? "Translating…"
+              ? "Translatingâ€¦"
               : guestLimitReached
                 ? "Upgrade to continue"
                 : "Translate"}
@@ -994,7 +1000,7 @@ export function Translator() {
               aria-label="Close upgrade options"
               onClick={() => setUpgradeModalOpen(false)}
             >
-              ×
+              Ã—
             </button>
 
             <p className="eyebrow">
@@ -1068,3 +1074,4 @@ export function Translator() {
     </>
   );
 }
+
