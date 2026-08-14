@@ -393,7 +393,11 @@ export function AdminKnowledgeManager({
         ? form.approved
           ? "Glossary term saved and approved for translation use."
           : "Glossary term saved and waiting for approval."
-        : "Saved.",
+        : kind === "grammar"
+          ? form.approved
+            ? "Grammar rule saved and approved for translation use."
+            : "Grammar rule saved and waiting for approval."
+          : "Saved.",
     );
 
     setEditing(null);
@@ -507,7 +511,9 @@ export function AdminKnowledgeManager({
       setMessage(
         kind === "glossary"
           ? `${cleaned.length} glossary item(s) imported. They are waiting for approval before translation use.`
-          : `${cleaned.length} unapproved rows imported.`,
+          : kind === "grammar"
+            ? `${cleaned.length} grammar rule(s) imported. They are waiting for approval before translation use.`
+            : `${cleaned.length} unapproved rows imported.`,
       );
 
       void load();
@@ -574,6 +580,9 @@ export function AdminKnowledgeManager({
   const isGlossary =
     kind === "glossary";
 
+  const isGrammar =
+    kind === "grammar";
+
   return (
     <>
       {isGlossary && (
@@ -589,6 +598,18 @@ export function AdminKnowledgeManager({
           <strong className="armenian-text">
             Բարեւ
           </strong>.
+        </div>
+      )}
+
+      {isGrammar && (
+        <div className="info-banner">
+          <strong>
+            How to use Grammar:
+          </strong>{" "}
+          Add a rule when the translator needs clear guidance about correct Western Armenian grammar, sentence structure or word forms. Write the instruction clearly, include useful keywords and add correct or incorrect examples when possible. Approve the rule only after checking it.
+          <br />
+          <strong>Example:</strong>{" "}
+          If the translator repeatedly uses an Eastern Armenian grammatical form, add a rule explaining the correct Western Armenian form and provide a correct example.
         </div>
       )}
 
@@ -623,17 +644,19 @@ export function AdminKnowledgeManager({
             <option value="all">
               {isGlossary
                 ? "All glossary items"
-                : "All statuses"}
+                : isGrammar
+                  ? "All grammar rules"
+                  : "All statuses"}
             </option>
 
             <option value="approved">
-              {isGlossary
+              {isGlossary || isGrammar
                 ? "Approved for translation use"
                 : "Approved"}
             </option>
 
             <option value="pending">
-              {isGlossary
+              {isGlossary || isGrammar
                 ? "Waiting for approval"
                 : "Unapproved"}
             </option>
@@ -838,10 +861,10 @@ export function AdminKnowledgeManager({
                         }`}
                       >
                         {row.approved
-                          ? isGlossary
+                          ? isGlossary || isGrammar
                             ? "Approved for use"
                             : "Approved"
-                          : isGlossary
+                          : isGlossary || isGrammar
                             ? "Waiting for approval"
                             : "Pending"}
                       </span>
@@ -938,6 +961,12 @@ export function AdminKnowledgeManager({
         {isGlossary && (
           <p className="form-help">
             Enter the source word or phrase and the preferred translation you want the translator to use when relevant.
+          </p>
+        )}
+
+        {isGrammar && (
+          <p className="form-help">
+            Write one clear grammar instruction at a time. Explain what the correct Western Armenian form should be and add examples that make the rule easy to understand.
           </p>
         )}
 
@@ -1072,7 +1101,7 @@ export function AdminKnowledgeManager({
             />
 
             <span>
-              {isGlossary
+              {isGlossary || isGrammar
                 ? "Approved for translation use"
                 : "Approved for translation context"}
             </span>
@@ -1081,6 +1110,12 @@ export function AdminKnowledgeManager({
           {isGlossary && (
             <p className="form-help">
               Approve this only after checking the preferred wording and confirming that the source can be used commercially.
+            </p>
+          )}
+
+          {isGrammar && (
+            <p className="form-help">
+              Approve this only after confirming that the rule accurately describes Western Armenian grammar and is safe to use as translation guidance.
             </p>
           )}
 
