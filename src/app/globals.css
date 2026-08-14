@@ -892,21 +892,22 @@ html.dark .tun-logo-image {
   }
 }
 
+
 /* Admin help tooltips */
-.admin-help-inline {
+
+.admin-dashboard-nav {
+  align-items: center;
+}
+
+.dashboard-nav-item {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  flex: 0 0 auto;
+  gap: 3px;
 }
 
-.admin-section-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.admin-section-title h2 {
-  margin: 0;
+.admin-dashboard-nav .dashboard-nav-item > a {
+  padding-left: 4px;
 }
 
 .admin-help {
@@ -916,42 +917,58 @@ html.dark .tun-logo-image {
   flex: 0 0 auto;
 }
 
+.admin-dashboard-nav .admin-help {
+  margin-left: 8px;
+}
+
 .admin-help-button {
-  width: 20px;
-  height: 20px;
+  width: 19px;
+  height: 19px;
   display: inline-grid;
   place-items: center;
+  flex: 0 0 auto;
   padding: 0;
   border: 1px solid var(--border-strong);
   border-radius: 50%;
   background: var(--surface-soft);
-  color: var(--text-soft);
-  font-size: 12px;
+  color: var(--text-muted);
+  font-size: 11px;
   font-weight: 800;
   line-height: 1;
   cursor: help;
+  transition:
+    background 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
+}
+
+.admin-dashboard-nav .admin-help-button {
+  width: 17px;
+  height: 17px;
+  font-size: 10px;
 }
 
 .admin-help-button:hover,
-.admin-help-button:focus-visible {
+.admin-help-button:focus-visible,
+.admin-help-button[aria-expanded="true"] {
   border-color: var(--accent);
   background: var(--accent-soft);
   color: var(--accent-text);
 }
 
 .admin-help-tooltip {
-  position: absolute;
-  z-index: 60;
-  top: calc(100% + 8px);
-  left: 0;
-  width: min(330px, calc(100vw - 44px));
-  padding: 12px 14px;
+  position: fixed;
+  z-index: 1200;
+  display: grid;
+  gap: 8px;
+  padding: 14px 15px;
   border: 1px solid var(--border-strong);
-  border-radius: 7px;
+  border-radius: 8px;
   background: var(--surface);
   color: var(--text-soft);
-  box-shadow: var(--shadow);
-  font-size: 12px;
+  box-shadow:
+    0 18px 48px rgba(0, 0, 0, 0.18);
+  font-size: 13px;
   font-weight: 500;
   line-height: 1.55;
   letter-spacing: 0;
@@ -960,14 +977,21 @@ html.dark .tun-logo-image {
   white-space: normal;
 }
 
+.admin-help-title {
+  display: block;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 800;
+}
+
 .admin-help-tooltip > span {
   display: block;
 }
 
 .admin-help-example {
-  margin-top: 8px;
   padding-top: 8px;
   border-top: 1px solid var(--border);
+  color: var(--text-soft);
 }
 
 .admin-help-example strong {
@@ -975,16 +999,10 @@ html.dark .tun-logo-image {
 }
 
 @media (max-width: 650px) {
-  .admin-section-title {
-    align-items: flex-start;
-  }
-
   .admin-help-tooltip {
-    position: fixed;
-    top: auto;
-    right: 14px;
-    bottom: 14px;
-    left: 14px;
-    width: auto;
+    right: 12px;
+    left: 12px !important;
+    width: auto !important;
+    max-width: none;
   }
 }

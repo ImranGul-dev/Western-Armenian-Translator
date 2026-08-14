@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import { AdminHelp } from "@/components/AdminHelp";
 import { DashboardShell } from "@/components/DashboardShell";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -268,15 +267,7 @@ export default function AdminOverviewPage() {
           </article>
 
           <article className="stat-card">
-            <span className="admin-help-inline">
-              Translations available for review
-
-              <AdminHelp
-                label="About translations available for review"
-                description="Saved translations that registered users have allowed administrators to review for translation quality."
-                example="A user translates 'Good morning' while admin review is enabled. That saved translation can appear here for quality checking."
-              />
-            </span>
+            <span>Translations available for review</span>
 
             <strong>
               {value(

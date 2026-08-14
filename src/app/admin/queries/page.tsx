@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { AdminHelp } from "@/components/AdminHelp";
 import { DashboardShell } from "@/components/DashboardShell";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -191,17 +190,7 @@ export default function AdminQueriesPage() {
         <section className="dashboard-card">
           <div className="card-heading">
             <div>
-              <div className="admin-section-title">
-                <h2>
-                  Translations available for review
-                </h2>
-
-                <AdminHelp
-                  label="About translation review"
-                  description="This area lets administrators review saved translations that registered users have explicitly made available for quality checking. It does not automatically contain every translation made on the site."
-                  example="A user translates 'How are you?' and has admin review enabled. The source and translated result can appear here so an administrator can check translation quality."
-                />
-              </div>
+              <h2>Translations available for review</h2>
 
               <p>
                 {visible.length} visible records from the most recent 250 translations available for review.
