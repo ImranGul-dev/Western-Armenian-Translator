@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { AdminHelp } from "@/components/AdminHelp";
 import { DashboardShell } from "@/components/DashboardShell";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -86,7 +87,7 @@ export default function AdminOverviewPage() {
       <DashboardShell
         admin
         title="Admin dashboard"
-        description="Live operational, language and subscription information. Empty values remain zero until real events exist."
+        description="Live information about users, translations, language quality and subscriptions."
       >
         {message && (
           <div className="info-banner">
@@ -267,8 +268,14 @@ export default function AdminOverviewPage() {
           </article>
 
           <article className="stat-card">
-            <span>
-              Consented query records
+            <span className="admin-help-inline">
+              Translations available for review
+
+              <AdminHelp
+                label="About translations available for review"
+                description="Saved translations that registered users have allowed administrators to review for translation quality."
+                example="A user translates 'Good morning' while admin review is enabled. That saved translation can appear here for quality checking."
+              />
             </span>
 
             <strong>
@@ -279,7 +286,7 @@ export default function AdminOverviewPage() {
             </strong>
 
             <Link href="/admin/queries">
-              Review queries
+              Review translations
             </Link>
           </article>
 

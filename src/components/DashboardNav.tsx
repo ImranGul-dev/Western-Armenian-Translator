@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -13,7 +13,7 @@ export function DashboardNav({ admin = false }: { admin?: boolean }) {
         ["/admin/grammar", "Grammar"],
         ["/admin/examples", "Examples"],
         ["/admin/corrections", "Corrections"],
-        ["/admin/queries", "Queries"],
+        ["/admin/queries", "Translations"],
         ["/admin/users", "Users"],
         ["/admin/widgets", "Widgets"],
         ["/admin/plans", "Plans"],
