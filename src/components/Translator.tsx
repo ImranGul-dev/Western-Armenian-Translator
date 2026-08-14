@@ -832,6 +832,11 @@ export function Translator() {
             maxCharacters={
               maxCharacters
             }
+            keyboardHint={
+              profile
+                ? "Automatic translation while typing"
+                : "Enter to translate · Shift + Enter for new line"
+            }
           />
 
           <div className="swap-control-wrap">
@@ -1074,4 +1079,5 @@ export function Translator() {
     </>
   );
 }
+
 
