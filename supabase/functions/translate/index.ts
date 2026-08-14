@@ -34,6 +34,7 @@ import {
 
 import {
   getClientFingerprintInput,
+  getGuestQuotaFingerprintInput,
   isPublishableKeyAccepted,
   sha256Hex,
 } from "../_shared/security.ts";
@@ -713,6 +714,21 @@ export default {
         }`,
       );
 
+    /*
+     * Keep the normal rate/security fingerprint browser-aware,
+     * but enforce the five-free-translations allowance by
+     * public IP so another browser or Incognito cannot reset it.
+     */
+    const guestQuotaHash =
+      await sha256Hex(
+        `${config.rateLimitSalt}|guest-daily|${
+          getGuestQuotaFingerprintInput(
+            request,
+            anonymousId,
+          )
+        }`,
+      );
+
     const admin =
       createClient(
         config.supabaseUrl,
@@ -1023,7 +1039,7 @@ export default {
         guestQuota =
           await consumeGuestTranslation(
             admin,
-            clientHash,
+            guestQuotaHash,
           );
       } catch (error) {
         console.error(
@@ -1286,7 +1302,7 @@ export default {
                   runInBackground(
                     releaseGuestTranslation(
                       admin,
-                      clientHash,
+                      guestQuotaHash,
                     ),
                   );
                 }
@@ -1522,7 +1538,7 @@ export default {
                 runInBackground(
                   releaseGuestTranslation(
                     admin,
-                    clientHash,
+                    guestQuotaHash,
                   ),
                 );
               }
