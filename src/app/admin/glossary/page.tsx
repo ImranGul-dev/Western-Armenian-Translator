@@ -1,1 +1,19 @@
-"use client";import{ProtectedRoute}from"@/components/ProtectedRoute";import{DashboardShell}from"@/components/DashboardShell";import{AdminKnowledgeManager}from"@/components/AdminKnowledgeManager";export default function Page(){return <ProtectedRoute roles={["language_editor","admin"]}><DashboardShell admin title="Glossary manager" description="Create, import, license and approve terms and phrases."><AdminKnowledgeManager kind="glossary"/></DashboardShell></ProtectedRoute>}
+"use client";
+
+import { AdminKnowledgeManager } from "@/components/AdminKnowledgeManager";
+import { DashboardShell } from "@/components/DashboardShell";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+
+export default function Page() {
+  return (
+    <ProtectedRoute roles={["language_editor", "admin"]}>
+      <DashboardShell
+        admin
+        title="Glossary"
+        description="Manage preferred terminology that can guide the translator toward consistent Western Armenian wording."
+      >
+        <AdminKnowledgeManager kind="glossary" />
+      </DashboardShell>
+    </ProtectedRoute>
+  );
+}

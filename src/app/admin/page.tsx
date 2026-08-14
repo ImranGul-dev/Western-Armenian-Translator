@@ -251,7 +251,7 @@ export default function AdminOverviewPage() {
 
           <article className="stat-card">
             <span>
-              Pending glossary approvals
+              Glossary items waiting for approval
             </span>
 
             <strong>
