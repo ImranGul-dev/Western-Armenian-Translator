@@ -1826,3 +1826,25 @@ html.dark .voice-speed-select {
     text-align: center;
   }
 }
+/* === Translator Thesaurus action === */
+
+.thesaurus-output-action {
+  color: var(--accent-text);
+  background: var(--accent-soft);
+  border-color: color-mix(
+    in srgb,
+    var(--accent) 22%,
+    var(--border)
+  );
+  font-weight: 650;
+}
+
+.thesaurus-output-action:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: color-mix(
+    in srgb,
+    var(--accent-soft) 82%,
+    var(--surface)
+  );
+}

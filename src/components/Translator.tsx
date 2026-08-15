@@ -14,6 +14,7 @@ import { StatusMessage } from "@/components/StatusMessage";
 import { SwapLanguagesButton } from "@/components/SwapLanguagesButton";
 import { TranslationPanel } from "@/components/TranslationPanel";
 import { TranslationFeedback } from "@/components/TranslationFeedback";
+import { PremiumFeatureNavButton } from "@/components/PremiumFeatureNavButton";
 import { UsageMeter } from "@/components/UsageMeter";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useAuth } from "@/contexts/AuthContext";
@@ -1084,6 +1085,24 @@ export function Translator() {
             loading={loading}
             transliteration={
               transliteration
+            }
+            panelActions={
+              targetLanguage ===
+                  "hyw" &&
+                translation &&
+                Array.from(
+                  translation,
+                ).length <= 200 ? (
+                <PremiumFeatureNavButton
+                  feature="thesaurus"
+                  label="Thesaurus"
+                  description="Explore Western Armenian synonyms, antonyms and alternative ways to express this translation."
+                  href={`/thesaurus?text=${encodeURIComponent(
+                    translation,
+                  )}`}
+                  className="panel-action thesaurus-output-action"
+                />
+              ) : undefined
             }
           />
         </div>

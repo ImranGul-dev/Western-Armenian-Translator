@@ -3,6 +3,7 @@
 import Link from "next/link";
 import {
   FormEvent,
+  useEffect,
   useRef,
   useState,
 } from "react";
@@ -139,6 +140,28 @@ export default function ThesaurusPage() {
     useRef<AbortController | null>(
       null,
     );
+
+  useEffect(() => {
+    const params =
+      new URLSearchParams(
+        window.location.search,
+      );
+
+    const prefill =
+      params
+        .get("text")
+        ?.trim();
+
+    if (!prefill) {
+      return;
+    }
+
+    setText(
+      Array.from(prefill)
+        .slice(0, 200)
+        .join(""),
+    );
+  }, []);
 
   const hasAccess =
     hasPaidFeatureAccess(

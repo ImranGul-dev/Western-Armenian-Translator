@@ -16,12 +16,16 @@ interface PremiumFeatureNavButtonProps {
   feature: PaidFeature;
   label: string;
   description: string;
+  href?: string;
+  className?: string;
 }
 
 export function PremiumFeatureNavButton({
   feature,
   label,
   description,
+  href,
+  className,
 }: PremiumFeatureNavButtonProps) {
   const {
     user,
@@ -56,6 +60,10 @@ export function PremiumFeatureNavButton({
   const isRolePlay =
     label === "Role-Play";
 
+  const controlClassName =
+    className ??
+    "nav-link premium-feature-nav-link";
+
   useEffect(() => {
     if (!open) {
       return;
@@ -84,11 +92,27 @@ export function PremiumFeatureNavButton({
     };
   }, [open]);
 
+  if (
+    !locked &&
+    href
+  ) {
+    return (
+      <Link
+        href={href}
+        className={
+          controlClassName
+        }
+      >
+        {label}
+      </Link>
+    );
+  }
+
   return (
     <>
       <button
         type="button"
-        className="nav-link premium-feature-nav-link"
+        className={controlClassName}
         disabled={loading}
         aria-haspopup="dialog"
         aria-expanded={open}
