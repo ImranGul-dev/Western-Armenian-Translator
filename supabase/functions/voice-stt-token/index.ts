@@ -24,7 +24,7 @@ function json(
   });
 }
 
-function transcriptionSettings(
+function getTranscriptionSettings(
   language: string,
 ) {
   if (language === "hyw") {
@@ -32,7 +32,7 @@ function transcriptionSettings(
       languages: ["hy"],
 
       prompt:
-        "Western Armenian speech for a Western Armenian translation application. Transcribe the speaker faithfully in Armenian script using Western Armenian wording and spelling where appropriate. Do not translate the speech.",
+        "Western Armenian speech. Transcribe faithfully in Armenian script. Prefer Western Armenian wording and spelling where appropriate. Do not translate.",
     };
   }
 
@@ -41,7 +41,7 @@ function transcriptionSettings(
       languages: ["hy"],
 
       prompt:
-        "Eastern Armenian speech for an Armenian translation application. Transcribe the speaker faithfully in Armenian script. Do not translate the speech.",
+        "Eastern Armenian speech. Transcribe faithfully in Armenian script. Do not translate.",
     };
   }
 
@@ -49,7 +49,7 @@ function transcriptionSettings(
     languages: ["en"],
 
     prompt:
-      "English speech for an English and Armenian translation application. Transcribe the speaker faithfully. Do not translate the speech.",
+      "English speech. Transcribe faithfully. Do not translate.",
   };
 }
 
@@ -73,7 +73,7 @@ export default {
         origin,
       );
 
-    const baseHeaders = {
+    const headers = {
       ...cors,
 
       "X-Request-Id":
@@ -92,14 +92,12 @@ export default {
       return json(
         {
           success: false,
-
           error:
             "This website origin is not allowed to use speech recognition.",
-
           requestId,
         },
         403,
-        baseHeaders,
+        headers,
       );
     }
 
@@ -111,7 +109,7 @@ export default {
         null,
         {
           status: 204,
-          headers: baseHeaders,
+          headers,
         },
       );
     }
@@ -123,16 +121,13 @@ export default {
       return json(
         {
           success: false,
-
           error:
             "Only POST requests are supported.",
-
           requestId,
         },
         405,
         {
-          ...baseHeaders,
-
+          ...headers,
           Allow:
             "POST, OPTIONS",
         },
@@ -150,92 +145,156 @@ export default {
       return json(
         {
           success: false,
-
           error:
             "The Supabase project key is missing or invalid.",
-
           requestId,
         },
         401,
-        baseHeaders,
+        headers,
       );
     }
 
     if (
-      !config.openAiApiKey ||
-      !config.rateLimitSalt
+      !config.openAiApiKey
     ) {
       return json(
         {
           success: false,
-
           error:
-            "Speech recognition is not configured.",
-
+            "OPENAI_API_KEY is not configured for speech recognition.",
           requestId,
         },
         500,
-        baseHeaders,
+        headers,
       );
     }
 
-    let body: unknown;
+    let body:
+      Record<string, unknown> = {};
 
     try {
-      body =
+      const parsed =
         await request.json();
+
+      if (
+        parsed &&
+        typeof parsed ===
+          "object" &&
+        !Array.isArray(parsed)
+      ) {
+        body =
+          parsed as Record<
+            string,
+            unknown
+          >;
+      }
     } catch {
       return json(
         {
           success: false,
-
           error:
             "The request contains invalid JSON.",
-
           requestId,
         },
         400,
-        baseHeaders,
+        headers,
       );
     }
 
-    const values =
-      body &&
-      typeof body === "object" &&
-      !Array.isArray(body)
-        ? body as Record<
-            string,
-            unknown
-          >
-        : {};
-
     const language =
-      values.language === "hyw" ||
-      values.language === "hye"
-        ? values.language
+      body.language === "hyw" ||
+      body.language === "hye"
+        ? body.language
         : "en";
 
     const settings =
-      transcriptionSettings(
+      getTranscriptionSettings(
         language,
       );
 
     /*
-     * Hash the requester identity before sending
-     * it as an OpenAI safety identifier.
-     *
-     * The raw public IP is never sent as the
-     * identifier.
+     * Keep a privacy-preserving identifier for
+     * OpenAI Realtime safety handling.
      */
-    const safetyIdentifier =
-      await sha256Hex(
-        `${config.rateLimitSalt}|voice-stt|${
-          getClientFingerprintInput(
-            request,
-            "voice-stt",
-          )
-        }`,
-      );
+    let safetyIdentifier:
+      string | null = null;
+
+    if (config.rateLimitSalt) {
+      safetyIdentifier =
+        await sha256Hex(
+          `${config.rateLimitSalt}|voice-stt|${
+            getClientFingerprintInput(
+              request,
+              "voice-stt",
+            )
+          }`,
+        );
+    }
+
+    const openAiHeaders:
+      Record<string, string> = {
+        Authorization:
+          `Bearer ${config.openAiApiKey}`,
+
+        "Content-Type":
+          "application/json",
+      };
+
+    if (safetyIdentifier) {
+      openAiHeaders[
+        "OpenAI-Safety-Identifier"
+      ] =
+        safetyIdentifier;
+    }
+
+    const sessionRequest = {
+      /*
+       * Keep this configuration intentionally
+       * small while establishing the realtime
+       * transcription connection.
+       */
+      session: {
+        type:
+          "transcription",
+
+        audio: {
+          input: {
+            format: {
+              type:
+                "audio/pcm",
+
+              rate:
+                24000,
+            },
+
+            transcription: {
+              model:
+                "gpt-live-transcribe",
+
+              languages:
+                settings.languages,
+
+              prompt:
+                settings.prompt,
+            },
+
+            turn_detection: {
+              type:
+                "server_vad",
+
+              threshold:
+                0.5,
+
+              prefix_padding_ms:
+                300,
+
+              silence_duration_ms:
+                500,
+            },
+          },
+        },
+      },
+    };
 
     let upstream:
       Response;
@@ -245,80 +304,16 @@ export default {
         await fetch(
           "https://api.openai.com/v1/realtime/client_secrets",
           {
-            method: "POST",
+            method:
+              "POST",
 
-            headers: {
-              Authorization:
-                `Bearer ${config.openAiApiKey}`,
-
-              "Content-Type":
-                "application/json",
-
-              "OpenAI-Safety-Identifier":
-                safetyIdentifier,
-            },
+            headers:
+              openAiHeaders,
 
             body:
-              JSON.stringify({
-                expires_after: {
-                  anchor:
-                    "created_at",
-
-                  seconds:
-                    120,
-                },
-
-                session: {
-                  type:
-                    "transcription",
-
-                  audio: {
-                    input: {
-                      format: {
-                        type:
-                          "audio/pcm",
-
-                        rate:
-                          24000,
-                      },
-
-                      noise_reduction: {
-                        type:
-                          "near_field",
-                      },
-
-                      transcription: {
-                        model:
-                          "gpt-live-transcribe",
-
-                        languages:
-                          settings.languages,
-
-                        prompt:
-                          settings.prompt,
-                      },
-
-                      /*
-                       * A short silence window keeps
-                       * speech-to-text feeling fast.
-                       */
-                      turn_detection: {
-                        type:
-                          "server_vad",
-
-                        threshold:
-                          0.5,
-
-                        prefix_padding_ms:
-                          300,
-
-                        silence_duration_ms:
-                          400,
-                      },
-                    },
-                  },
-                },
-              }),
+              JSON.stringify(
+                sessionRequest,
+              ),
 
             signal:
               request.signal,
@@ -326,7 +321,7 @@ export default {
         );
     } catch (error) {
       console.error(
-        "Realtime transcription token request failed",
+        "OpenAI realtime client secret request failed",
         error,
       );
 
@@ -335,23 +330,79 @@ export default {
           success: false,
 
           error:
-            "Speech recognition is temporarily unavailable.",
+            "Could not connect to OpenAI speech recognition.",
+
+          code:
+            "openai_connection_failed",
 
           requestId,
         },
         503,
-        baseHeaders,
+        headers,
       );
     }
 
     if (!upstream.ok) {
+      let openAiMessage =
+        "OpenAI rejected the speech recognition session.";
+
+      let openAiCode:
+        string | null = null;
+
+      let openAiType:
+        string | null = null;
+
       try {
+        const raw =
+          await upstream.text();
+
         console.error(
-          "OpenAI realtime token error",
-          await upstream.text(),
+          "OpenAI realtime client secret error",
+          upstream.status,
+          raw,
         );
+
+        try {
+          const parsed =
+            JSON.parse(raw) as {
+              error?: {
+                message?: unknown;
+                code?: unknown;
+                type?: unknown;
+              };
+            };
+
+          if (
+            typeof parsed.error
+              ?.message ===
+            "string"
+          ) {
+            openAiMessage =
+              parsed.error.message;
+          }
+
+          if (
+            typeof parsed.error
+              ?.code ===
+            "string"
+          ) {
+            openAiCode =
+              parsed.error.code;
+          }
+
+          if (
+            typeof parsed.error
+              ?.type ===
+            "string"
+          ) {
+            openAiType =
+              parsed.error.type;
+          }
+        } catch {
+          // Upstream response was not JSON.
+        }
       } catch {
-        // Logging failed.
+        // Could not read upstream body.
       }
 
       return json(
@@ -359,7 +410,17 @@ export default {
           success: false,
 
           error:
-            "Could not start speech recognition.",
+            openAiMessage,
+
+          code:
+            openAiCode ||
+            "openai_realtime_error",
+
+          type:
+            openAiType,
+
+          upstreamStatus:
+            upstream.status,
 
           requestId,
         },
@@ -367,28 +428,63 @@ export default {
           upstream.status < 600
           ? upstream.status
           : 502,
-        baseHeaders,
+        headers,
       );
     }
 
-    const token =
-      await upstream.json() as {
-        value?: string;
-        expires_at?: number;
-      };
+    let token:
+      Record<
+        string,
+        unknown
+      >;
 
-    if (!token.value) {
+    try {
+      token =
+        await upstream.json();
+    } catch {
       return json(
         {
           success: false,
 
           error:
-            "Speech recognition session could not be created.",
+            "OpenAI returned an invalid speech recognition session.",
+
+          code:
+            "invalid_openai_response",
 
           requestId,
         },
         502,
-        baseHeaders,
+        headers,
+      );
+    }
+
+    const value =
+      typeof token.value ===
+        "string"
+        ? token.value
+        : "";
+
+    if (!value) {
+      console.error(
+        "Realtime client secret missing value",
+        token,
+      );
+
+      return json(
+        {
+          success: false,
+
+          error:
+            "OpenAI did not return a speech recognition client secret.",
+
+          code:
+            "missing_client_secret",
+
+          requestId,
+        },
+        502,
+        headers,
       );
     }
 
@@ -396,16 +492,18 @@ export default {
       {
         success: true,
 
-        value:
-          token.value,
+        value,
 
         expiresAt:
-          token.expires_at ?? null,
+          typeof token.expires_at ===
+            "number"
+            ? token.expires_at
+            : null,
 
         requestId,
       },
       200,
-      baseHeaders,
+      headers,
     );
   },
 };
