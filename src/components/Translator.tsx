@@ -40,6 +40,10 @@ import {
 } from "@/lib/translation-api";
 
 import { countMeaningfulCharacters } from "@/lib/validation";
+import {
+  hasLatinWesternArmenianInput,
+  latinToWesternArmenian,
+} from "@/lib/western-armenian-input";
 import { transliterateWesternArmenian } from "@/lib/western-armenian-transliteration";
 
 import type { UsageSummary } from "@/types/database";
@@ -677,6 +681,39 @@ export function Translator() {
     }
   }
 
+  function convertLatinInput() {
+    if (
+      sourceLanguage !== "hyw" ||
+      !hasLatinWesternArmenianInput(
+        sourceText,
+      )
+    ) {
+      return;
+    }
+
+    const converted =
+      latinToWesternArmenian(
+        sourceText,
+      );
+
+    if (
+      converted === sourceText
+    ) {
+      return;
+    }
+
+    /*
+     * Use the existing source-text update path so conversion
+     * cancels any stale translation stream and preserves the
+     * normal character-limit/error behavior.
+     *
+     * Logged-in automatic translation will then react to the
+     * converted Armenian text through the existing debounce.
+     * Guests can press Enter or Translate as usual.
+     */
+    textChange(converted);
+  }
+
   async function paste() {
     try {
       const pasted =
@@ -870,57 +907,87 @@ export function Translator() {
               </button>
             }
           panelActions={
-              <SpeechToTextButton
-                language={
-                  sourceLanguage
-                }
-                currentText={
-                  sourceText
-                }
-                maxCharacters={
-                  maxCharacters
-                }
-                disabled={
-                  loading
-                }
-                onListeningChange={
-                  setSpeechActive
-                }
-                onTranscript={(
-                  spokenText,
-                  final,
-                ) => {
-                  /*
-                   * Update the source box while
-                   * realtime transcription arrives.
-                   */
-                  textChange(
-                    spokenText,
-                  );
+              <>
+                {sourceLanguage ===
+                  "hyw" &&
+                hasLatinWesternArmenianInput(
+                  sourceText,
+                ) ? (
+                  <button
+                    type="button"
+                    className="panel-action"
+                    disabled={
+                      loading
+                    }
+                    onClick={
+                      convertLatinInput
+                    }
+                    title="Convert phonetic Latin typing to Western Armenian script"
+                  >
+                    <span
+                      aria-hidden="true"
+                    >
+                      {"Ա"}
+                    </span>
 
-                  /*
-                   * Logged-in users normally
-                   * auto-translate while typing.
-                   *
-                   * During microphone input we wait
-                   * until OpenAI marks the speech
-                   * turn complete so partial words
-                   * do not repeatedly call GPT-5.4.
-                   */
-                  if (
-                    final &&
-                    profile &&
-                    countMeaningfulCharacters(
-                      spokenText,
-                    ) >= 2
-                  ) {
-                    void translate(
-                      spokenText,
-                      true,
-                    );
+                    <span>
+                      Latin → Armenian
+                    </span>
+                  </button>
+                ) : null}
+
+                <SpeechToTextButton
+                  language={
+                    sourceLanguage
                   }
-                }}
-              />
+                  currentText={
+                    sourceText
+                  }
+                  maxCharacters={
+                    maxCharacters
+                  }
+                  disabled={
+                    loading
+                  }
+                  onListeningChange={
+                    setSpeechActive
+                  }
+                  onTranscript={(
+                    spokenText,
+                    final,
+                  ) => {
+                    /*
+                     * Update the source box while
+                     * realtime transcription arrives.
+                     */
+                    textChange(
+                      spokenText,
+                    );
+
+                    /*
+                     * Logged-in users normally
+                     * auto-translate while typing.
+                     *
+                     * During microphone input we wait
+                     * until OpenAI marks the speech
+                     * turn complete so partial words
+                     * do not repeatedly call GPT-5.4.
+                     */
+                    if (
+                      final &&
+                      profile &&
+                      countMeaningfulCharacters(
+                        spokenText,
+                      ) >= 2
+                    ) {
+                      void translate(
+                        spokenText,
+                        true,
+                      );
+                    }
+                  }}
+                />
+              </>
             }
           />
 
