@@ -9,6 +9,7 @@ import {
   type KeyboardEvent,
 } from "react";
 
+import { SpeechToTextButton } from "@/components/SpeechToTextButton";
 import { StatusMessage } from "@/components/StatusMessage";
 import { SwapLanguagesButton } from "@/components/SwapLanguagesButton";
 import { TranslationPanel } from "@/components/TranslationPanel";
@@ -117,6 +118,11 @@ export function Translator() {
     error,
     setError,
   ] = useState("");
+
+  const [
+    speechActive,
+    setSpeechActive,
+  ] = useState(false);
 
   const [
     upgrade,
@@ -553,6 +559,7 @@ export function Translator() {
   useEffect(() => {
     if (
       profile &&
+      !speechActive &&
       debouncedText === sourceText
     ) {
       void translate(
@@ -566,6 +573,7 @@ export function Translator() {
     targetLanguage,
     translate,
     profile,
+    speechActive,
   ]);
 
   /*
@@ -836,6 +844,59 @@ export function Translator() {
               profile
                 ? "Automatic translation while typing"
                 : "Enter to translate - Shift + Enter for new line"
+            }
+          panelActions={
+              <SpeechToTextButton
+                language={
+                  sourceLanguage
+                }
+                currentText={
+                  sourceText
+                }
+                maxCharacters={
+                  maxCharacters
+                }
+                disabled={
+                  loading
+                }
+                onListeningChange={
+                  setSpeechActive
+                }
+                onTranscript={(
+                  spokenText,
+                  final,
+                ) => {
+                  /*
+                   * Update the source box while
+                   * realtime transcription arrives.
+                   */
+                  textChange(
+                    spokenText,
+                  );
+
+                  /*
+                   * Logged-in users normally
+                   * auto-translate while typing.
+                   *
+                   * During microphone input we wait
+                   * until OpenAI marks the speech
+                   * turn complete so partial words
+                   * do not repeatedly call GPT-5.4.
+                   */
+                  if (
+                    final &&
+                    profile &&
+                    countMeaningfulCharacters(
+                      spokenText,
+                    ) >= 2
+                  ) {
+                    void translate(
+                      spokenText,
+                      true,
+                    );
+                  }
+                }}
+              />
             }
           />
 

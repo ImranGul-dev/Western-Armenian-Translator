@@ -1070,3 +1070,47 @@ html.dark .voice-speed-select {
     flex-direction: column;
   }
 }
+/* Speech input controls */
+
+.speech-input-control {
+  display: inline-flex;
+  align-items: center;
+}
+
+.speech-input-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.speech-input-button.is-listening {
+  color: var(--accent);
+}
+
+.speech-live-dot {
+  display: inline-block;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: currentColor;
+  animation: speech-live-pulse 1s ease-in-out infinite;
+}
+
+@keyframes speech-live-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.85);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .speech-live-dot {
+    animation: none;
+  }
+}
