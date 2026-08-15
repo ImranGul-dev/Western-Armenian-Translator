@@ -1114,3 +1114,248 @@ html.dark .voice-speed-select {
     animation: none;
   }
 }
+/* Mobile translator controls v2 */
+
+.mobile-source-translate-wrap {
+  display: none;
+}
+
+@media (max-width: 600px) {
+  /*
+   * Keep the mobile workspace compact while
+   * leaving desktop/tablet styling unchanged.
+   */
+  .translator-toolbar {
+    min-height: 50px;
+    padding: 10px 14px;
+  }
+
+  .translator-toolbar > div {
+    width: 100%;
+  }
+
+  /*
+   * Stack the language selector and action controls.
+   * This gives Speak, Paste, Clear, Listen and Copy
+   * enough horizontal room for readable labels.
+   */
+  .panel-header {
+    min-height: 0;
+    padding: 12px 14px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .language-control,
+  .select-wrap {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .select-wrap select {
+    min-height: 36px;
+    font-size: 15px;
+  }
+
+  .panel-actions {
+    width: 100%;
+    display: flex;
+    align-items: stretch;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-top: 9px;
+    border-top: 1px solid var(--border);
+  }
+
+  /*
+   * Undo the old mobile rule that reduced every
+   * action to a tiny 34px icon-only control.
+   */
+  .panel-action {
+    width: auto;
+    min-width: 0;
+    min-height: 42px;
+    padding: 0 12px;
+    justify-content: center;
+    border: 1px solid var(--border);
+    background: var(--surface-soft);
+    font-size: 13px;
+  }
+
+  .panel-action span:last-child {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+    white-space: nowrap;
+  }
+
+  /*
+   * SPEAK
+   * Give microphone input its own full-width row.
+   */
+  .input-panel .speech-input-control {
+    order: -1;
+    width: 100%;
+    flex: 1 1 100%;
+  }
+
+  .input-panel .speech-input-button {
+    width: 100%;
+    min-height: 44px;
+    justify-content: center;
+  }
+
+  /*
+   * PASTE + CLEAR
+   * Two balanced buttons under Speak.
+   */
+  .input-panel .panel-actions > .panel-action {
+    flex: 1 1 calc(50% - 4px);
+  }
+
+  /*
+   * Input and output areas no longer need the
+   * oversized desktop minimum height on phones.
+   */
+  .panel-body {
+    min-height: 0;
+  }
+
+  .panel-body textarea {
+    min-height: 190px;
+    padding: 17px 15px 10px;
+    font-size: 17px;
+    line-height: 1.55;
+  }
+
+  .translation-output {
+    min-height: 170px;
+    padding: 17px 15px 10px;
+    font-size: 17px;
+    line-height: 1.55;
+  }
+
+  .panel-footer-row {
+    min-height: 38px;
+    padding: 7px 14px 9px;
+    gap: 8px;
+  }
+
+  /*
+   * Put the primary mobile Translate action
+   * immediately under the source text field.
+   */
+  .mobile-source-translate-wrap {
+    display: block;
+    padding: 2px 14px 14px;
+  }
+
+  .mobile-source-translate-button {
+    width: 100%;
+    min-height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+  }
+
+  /*
+   * The old mobile Translate button remains in
+   * the DOM for compatibility, but is no longer
+   * shown in the bottom status bar.
+   */
+  .translator-bottom-bar .mobile-translate-button {
+    display: none !important;
+  }
+
+  .translator-bottom-bar {
+    min-height: 46px;
+    padding: 7px 14px;
+  }
+
+  /*
+   * Place the language swap control naturally
+   * between the source and translated panels.
+   */
+  .swap-control-wrap {
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-soft);
+  }
+
+  .translation-panel:first-child {
+    border-bottom: 0;
+  }
+
+  .swap-button {
+    width: 38px;
+    height: 38px;
+    transform: rotate(90deg);
+  }
+
+  .swap-button:hover:not(:disabled) {
+    transform: rotate(90deg);
+  }
+
+  /*
+   * LISTEN + SPEED + COPY
+   */
+  .output-panel .panel-actions > .voice-listen-control {
+    min-width: 0;
+    flex: 1 1 190px;
+  }
+
+  .output-panel .voice-listen-control .panel-action {
+    flex: 1 1 auto;
+  }
+
+  .output-panel .panel-actions > .panel-action {
+    flex: 1 1 88px;
+  }
+
+  .voice-speed-select {
+    min-height: 42px;
+    flex: 0 0 auto;
+  }
+
+  /*
+   * Western Armenian transliteration controls.
+   */
+  .transliteration-block {
+    margin: 0 14px 12px;
+    padding: 12px 0;
+  }
+
+  .transliteration-heading-row {
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .voice-listen-control-compact {
+    width: 100%;
+  }
+
+  .voice-listen-control-compact .panel-action {
+    flex: 1 1 auto;
+    min-height: 42px;
+  }
+
+  .voice-listen-control-compact .voice-speed-select {
+    min-height: 42px;
+  }
+
+  .transliteration-text {
+    font-size: 14px;
+    line-height: 1.6;
+  }
+}

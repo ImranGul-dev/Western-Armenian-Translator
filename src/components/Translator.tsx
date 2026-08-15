@@ -845,6 +845,30 @@ export function Translator() {
                 ? "Automatic translation while typing"
                 : "Enter to translate - Shift + Enter for new line"
             }
+            mobileFooterAction={
+              <button
+                className="primary-button mobile-source-translate-button"
+                type="button"
+                onClick={() =>
+                  void translate(
+                    sourceText,
+                    true,
+                  )
+                }
+                disabled={
+                  loading ||
+                  countMeaningfulCharacters(
+                    sourceText,
+                  ) < 2
+                }
+              >
+                {loading
+                  ? "Translating..."
+                  : guestLimitReached
+                    ? "Upgrade to continue"
+                    : "Translate"}
+              </button>
+            }
           panelActions={
               <SpeechToTextButton
                 language={

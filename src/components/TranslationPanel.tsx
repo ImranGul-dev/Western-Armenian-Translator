@@ -50,6 +50,7 @@ interface InputPanelProps
   onPaste: () => void;
   maxCharacters: number;
   keyboardHint?: string;
+  mobileFooterAction?: ReactNode;
 }
 
 interface OutputPanelProps
@@ -214,6 +215,11 @@ export function TranslationPanel(
               }
             />
           </div>
+          {props.mobileFooterAction ? (
+            <div className="mobile-source-translate-wrap">
+              {props.mobileFooterAction}
+            </div>
+          ) : null}
         </div>
       ) : (
         <div
