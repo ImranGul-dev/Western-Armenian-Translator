@@ -37,6 +37,9 @@ export function PremiumFeatureNavButton({
     !user ||
     !hasPremiumAccess;
 
+  const isRolePlay =
+    label === "Role-Play";
+
   useEffect(() => {
     if (!open) {
       return;
@@ -84,8 +87,8 @@ export function PremiumFeatureNavButton({
         {locked && (
           <span
             className="premium-nav-lock"
-            aria-label="Premium feature"
-            title="Premium feature"
+            aria-label="Paid feature"
+            title="Paid feature"
           >
             {"\uD83D\uDD12"}
           </span>
@@ -126,7 +129,7 @@ export function PremiumFeatureNavButton({
             {locked ? (
               <>
                 <p className="eyebrow">
-                  Premium feature
+                  Paid feature
                 </p>
 
                 <h2 id="premium-feature-title">
@@ -137,28 +140,38 @@ export function PremiumFeatureNavButton({
                   id="premium-feature-description"
                   className="upgrade-modal-copy"
                 >
-                  {description} This is
-                  being prepared as a
-                  premium Tun feature.
+                  {description}
                 </p>
 
                 <ul className="upgrade-modal-features">
                   <li>
-                    Available to eligible
-                    paid accounts when
-                    launched
+                    Available to paid users
                   </li>
 
-                  <li>
-                    Designed for deeper
-                    Western Armenian
-                    learning and practice
-                  </li>
+                  {isRolePlay ? (
+                    <>
+                      <li>
+                        Voice and text conversation practice
+                      </li>
+
+                      <li>
+                        Real-world Western Armenian scenarios
+                      </li>
+                    </>
+                  ) : (
+                    <>
+                      <li>
+                        Western Armenian synonyms, antonyms and alternative wording
+                      </li>
+
+                      <li>
+                        Alternative ways to express words and phrases
+                      </li>
+                    </>
+                  )}
 
                   <li>
-                    Your existing
-                    translator remains
-                    available separately
+                    Upgrade to Person or Schools for paid access
                   </li>
                 </ul>
 
@@ -195,31 +208,54 @@ export function PremiumFeatureNavButton({
                     </button>
                   )}
                 </div>
-
-                <p className="upgrade-modal-note">
-                  The full {label} feature
-                  is still being developed.
-                </p>
               </>
             ) : (
               <>
                 <p className="eyebrow">
-                  Premium feature
+                  Paid feature
                 </p>
 
                 <h2 id="premium-feature-title">
-                  {label} is coming soon
+                  {label}
                 </h2>
 
                 <p
                   id="premium-feature-description"
                   className="upgrade-modal-copy"
                 >
-                  Your current plan is
-                  eligible for premium
-                  features. We are
-                  preparing the full{" "}
-                  {label} experience now.
+                  {description}
+                </p>
+
+                <ul className="upgrade-modal-features">
+                  <li>
+                    Included for paid users
+                  </li>
+
+                  {isRolePlay ? (
+                    <>
+                      <li>
+                        Voice and text conversation practice
+                      </li>
+
+                      <li>
+                        Real-world Western Armenian scenarios
+                      </li>
+                    </>
+                  ) : (
+                    <>
+                      <li>
+                        Synonyms and antonyms
+                      </li>
+
+                      <li>
+                        Alternative Western Armenian wording and phrasing
+                      </li>
+                    </>
+                  )}
+                </ul>
+
+                <p className="upgrade-modal-note">
+                  This feature is currently being developed.
                 </p>
 
                 <div className="upgrade-modal-actions">
