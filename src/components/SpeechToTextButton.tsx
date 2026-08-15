@@ -17,7 +17,8 @@ import {
 type SpeechState =
   | "idle"
   | "connecting"
-  | "listening";
+  | "listening"
+  | "processing";
 
 interface SpeechToTextButtonProps {
   language: LanguageCode;
@@ -222,9 +223,77 @@ export function SpeechToTextButton({
     return data.value;
   }
 
+  function commitSpeech() {
+    const channel =
+      channelRef.current;
+
+    if (
+      !channel ||
+      channel.readyState !== "open"
+    ) {
+      setError(
+        "The speech connection is not ready yet.",
+      );
+
+      return;
+    }
+
+    /*
+     * Stop sending additional microphone audio
+     * while OpenAI finalizes the current turn.
+     *
+     * The WebRTC connection and data channel stay
+     * alive until the completed transcript arrives.
+     */
+    if (streamRef.current) {
+      for (
+        const track
+        of streamRef.current
+          .getAudioTracks()
+      ) {
+        track.enabled =
+          false;
+      }
+    }
+
+    setState(
+      "processing",
+    );
+
+    setError("");
+
+    try {
+      channel.send(
+        JSON.stringify({
+          type:
+            "input_audio_buffer.commit",
+        }),
+      );
+    } catch (cause) {
+      console.error(
+        "Could not commit speech input",
+        cause,
+      );
+
+      setError(
+        "Could not finish speech recognition. Please try again.",
+      );
+
+      closeSession();
+    }
+  }
+
   async function start() {
     if (
-      state !== "idle"
+      state === "listening"
+    ) {
+      commitSpeech();
+      return;
+    }
+
+    if (
+      state === "connecting" ||
+      state === "processing"
     ) {
       closeSession();
       return;
@@ -545,13 +614,17 @@ export function SpeechToTextButton({
           (
             state === "idle"
               ? "Speak instead of typing"
-              : "Cancel speech input"
+              : state === "listening"
+                ? "Stop and transcribe"
+                : "Cancel speech input"
           )
         }
         aria-label={
           state === "idle"
             ? "Start speech to text"
-            : "Cancel speech to text"
+            : state === "listening"
+              ? "Stop and transcribe speech"
+              : "Cancel speech to text"
         }
       >
         <span aria-hidden="true">
@@ -564,12 +637,17 @@ export function SpeechToTextButton({
             Connecting...
           </span>
         ) : state ===
+          "processing" ? (
+          <span>
+            Transcribing...
+          </span>
+        ) : state ===
           "listening" ? (
           <>
             <span className="speech-live-dot" />
 
             <span>
-              Listening...
+              Stop
             </span>
           </>
         ) : (
