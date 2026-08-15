@@ -293,9 +293,51 @@ export function Translator() {
   const translate =
     useCallback(
       async (
-        text: string,
+        inputText: string,
         force = false,
       ) => {
+        let text = inputText;
+
+        /*
+         * Western Armenian may be entered phonetically with
+         * Latin characters.
+         *
+         * Never send that raw Latin text to the translation
+         * backend as though it were already Armenian script.
+         * Convert it first, update the visible source box,
+         * and continue the normal translation request with
+         * the converted Armenian text.
+         */
+        if (
+          sourceLanguage === "hyw" &&
+          hasLatinWesternArmenianInput(
+            text,
+          )
+        ) {
+          const converted =
+            latinToWesternArmenian(
+              text,
+            );
+
+          if (
+            converted !== text
+          ) {
+            text =
+              Array.from(
+                converted,
+              )
+                .slice(
+                  0,
+                  maxCharacters,
+                )
+                .join("");
+
+            setSourceText(
+              text,
+            );
+          }
+        }
+
         if (
           !text.trim() ||
           countMeaningfulCharacters(
@@ -561,6 +603,26 @@ export function Translator() {
    * daily translations.
    */
   useEffect(() => {
+    const latinWesternArmenianPending =
+      sourceLanguage === "hyw" &&
+      hasLatinWesternArmenianInput(
+        sourceText,
+      );
+
+    /*
+     * When Western Armenian is selected and the user is
+     * typing phonetically in Latin characters, wait for
+     * conversion instead of treating the Latin text as
+     * Armenian and sending it to GPT.
+     */
+    if (
+      latinWesternArmenianPending
+    ) {
+      setTranslation("");
+      setRequestId("");
+      return;
+    }
+
     if (
       profile &&
       !speechActive &&
