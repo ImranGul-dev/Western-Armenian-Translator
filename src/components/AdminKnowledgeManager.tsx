@@ -8,6 +8,7 @@ import {
 } from "react";
 
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { transliterateWesternArmenian } from "@/lib/western-armenian-transliteration";
 
 type Kind =
   | "glossary"
@@ -222,6 +223,61 @@ function languageName(code: string) {
   }
 
   return code;
+}
+
+function KnowledgeText({
+  text,
+  language,
+  primary = false,
+}: {
+  text: string | null | undefined;
+  language: string;
+  primary?: boolean;
+}) {
+  if (!text) {
+    return null;
+  }
+
+  const showTransliteration =
+    language === "hyw";
+
+  const transliteration =
+    showTransliteration
+      ? transliterateWesternArmenian(text)
+      : "";
+
+  const className =
+    language === "hyw" ||
+    language === "hye"
+      ? "armenian-text"
+      : undefined;
+
+  return (
+    <>
+      {primary ? (
+        <strong className={className}>
+          {text}
+        </strong>
+      ) : (
+        <small className={className}>
+          {text}
+        </small>
+      )}
+
+      {showTransliteration &&
+        transliteration &&
+        transliteration !== text && (
+          <small>
+            <strong>
+              Latin transliteration:
+            </strong>{" "}
+            <span className="transliteration-text">
+              {transliteration}
+            </span>
+          </small>
+        )}
+    </>
+  );
 }
 
 export function AdminKnowledgeManager({
@@ -852,17 +908,53 @@ export function AdminKnowledgeManager({
                     </td>
 
                     <td>
-                      <strong>
-                        {row.source_term ||
-                          row.title ||
-                          row.source_text}
-                      </strong>
+                      {isGlossary ? (
+                        <>
+                          <KnowledgeText
+                            text={row.source_term}
+                            language={
+                              row.source_language
+                            }
+                            primary
+                          />
 
-                      <small>
-                        {row.target_term ||
-                          row.description ||
-                          row.translated_text}
-                      </small>
+                          <KnowledgeText
+                            text={row.target_term}
+                            language={
+                              row.target_language
+                            }
+                          />
+                        </>
+                      ) : isExamples ? (
+                        <>
+                          <KnowledgeText
+                            text={row.source_text}
+                            language={
+                              row.source_language
+                            }
+                            primary
+                          />
+
+                          <KnowledgeText
+                            text={
+                              row.translated_text
+                            }
+                            language={
+                              row.target_language
+                            }
+                          />
+                        </>
+                      ) : (
+                        <>
+                          <strong>
+                            {row.title}
+                          </strong>
+
+                          <small>
+                            {row.description}
+                          </small>
+                        </>
+                      )}
                     </td>
 
                     <td>
