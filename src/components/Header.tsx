@@ -102,11 +102,13 @@ export function Header() {
             </Link>
 
             <PremiumFeatureNavButton
+              feature="thesaurus"
               label="Thesaurus"
               description="Explore Western Armenian synonyms, antonyms and alternative ways to express words and phrases."
             />
 
             <PremiumFeatureNavButton
+              feature="role_play"
               label="Role-Play"
               description="Practise real-world Western Armenian conversations through interactive learning scenarios."
             />

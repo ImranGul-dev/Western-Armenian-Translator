@@ -9,6 +9,10 @@ import {
 
 import { useAuth } from "@/contexts/AuthContext";
 
+import {
+  hasPaidFeatureAccess,
+} from "@/lib/paid-feature-access";
+
 import type {
   LanguageCode,
 } from "@/lib/languages";
@@ -111,15 +115,24 @@ export function VoiceListenButton({
       null,
     );
 
+  const voiceFeature =
+    mode === "pronunciation"
+      ? "pronunciation"
+      : "audio";
+
   const hasPaidVoiceAccess =
-    Boolean(
-      user &&
-        (
-          profile?.role === "admin" ||
-          plan?.slug === "premium" ||
-          plan?.slug === "business" ||
-          plan?.slug === "admin"
-        ),
+    hasPaidFeatureAccess(
+      voiceFeature,
+      {
+        isAuthenticated:
+          Boolean(user),
+
+        role:
+          profile?.role,
+
+        planSlug:
+          plan?.slug,
+      },
     );
 
   const locked =

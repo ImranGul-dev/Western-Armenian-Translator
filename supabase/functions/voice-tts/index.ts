@@ -7,6 +7,10 @@ import {
 } from "../_shared/account.ts";
 
 import {
+  hasPaidFeatureAccess,
+} from "../_shared/paid-feature-access.ts";
+
+import {
   buildCorsHeaders,
   isOriginAllowed,
 } from "../_shared/cors.ts";
@@ -266,13 +270,10 @@ export default {
     }
 
     const paidVoiceAccess =
-      account.role === "admin" ||
-      account.plan.slug ===
-        "premium" ||
-      account.plan.slug ===
-        "business" ||
-      account.plan.slug ===
-        "admin";
+      hasPaidFeatureAccess(
+        "audio",
+        account,
+      );
 
     if (!paidVoiceAccess) {
       return json(

@@ -7,13 +7,19 @@ import {
 } from "react";
 
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  hasPaidFeatureAccess,
+  type PaidFeature,
+} from "@/lib/paid-feature-access";
 
 interface PremiumFeatureNavButtonProps {
+  feature: PaidFeature;
   label: string;
   description: string;
 }
 
 export function PremiumFeatureNavButton({
+  feature,
   label,
   description,
 }: PremiumFeatureNavButtonProps) {
@@ -28,14 +34,20 @@ export function PremiumFeatureNavButton({
     setOpen,
   ] = useState(false);
 
-  const hasPremiumAccess =
-    plan?.slug === "premium" ||
-    plan?.slug === "business" ||
-    plan?.slug === "admin";
+  const hasFeatureAccess =
+    hasPaidFeatureAccess(
+      feature,
+      {
+        isAuthenticated:
+          Boolean(user),
+
+        planSlug:
+          plan?.slug,
+      },
+    );
 
   const locked =
-    !user ||
-    !hasPremiumAccess;
+    !hasFeatureAccess;
 
   const isRolePlay =
     label === "Role-Play";
