@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { DashboardShell } from "@/components/DashboardShell";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { transliterateWesternArmenian } from "@/lib/western-armenian-transliteration";
 
 import type { Profile } from "@/types/database";
 
@@ -34,6 +35,39 @@ function languageName(code: string): string {
     default:
       return code;
   }
+}
+
+function WesternArmenianTransliteration({
+  text,
+}: {
+  text: string;
+}) {
+  const transliteration =
+    transliterateWesternArmenian(text);
+
+  if (
+    !transliteration ||
+    transliteration === text
+  ) {
+    return null;
+  }
+
+  return (
+    <div
+      style={{
+        marginTop: "0.45rem",
+      }}
+    >
+      <small>
+        <strong>
+          Latin transliteration:
+        </strong>{" "}
+        <span className="transliteration-text">
+          {transliteration}
+        </span>
+      </small>
+    </div>
+  );
 }
 
 export default function AdminQueriesPage() {
@@ -190,7 +224,9 @@ export default function AdminQueriesPage() {
         <section className="dashboard-card">
           <div className="card-heading">
             <div>
-              <h2>Translations available for review</h2>
+              <h2>
+                Translations available for review
+              </h2>
 
               <p>
                 {visible.length} visible records from the most recent 250 translations available for review.
@@ -302,9 +338,25 @@ export default function AdminQueriesPage() {
                         Source text
                       </span>
 
-                      <p>
+                      <p
+                        className={
+                          row.source_language ===
+                          "hyw"
+                            ? "armenian-text"
+                            : undefined
+                        }
+                      >
                         {row.source_text}
                       </p>
+
+                      {row.source_language ===
+                        "hyw" && (
+                        <WesternArmenianTransliteration
+                          text={
+                            row.source_text
+                          }
+                        />
+                      )}
                     </div>
 
                     <div>
@@ -312,11 +364,27 @@ export default function AdminQueriesPage() {
                         Translation
                       </span>
 
-                      <p className="armenian-text">
+                      <p
+                        className={
+                          row.target_language ===
+                          "hyw"
+                            ? "armenian-text"
+                            : undefined
+                        }
+                      >
                         {
                           row.translated_text
                         }
                       </p>
+
+                      {row.target_language ===
+                        "hyw" && (
+                        <WesternArmenianTransliteration
+                          text={
+                            row.translated_text
+                          }
+                        />
+                      )}
                     </div>
                   </div>
 
