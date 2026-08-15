@@ -132,7 +132,7 @@ function cleanList(
     seen.add(key);
     items.push(item);
 
-    if (items.length >= 6) {
+    if (items.length >= 5) {
       break;
     }
   }
@@ -533,15 +533,25 @@ Your job is to analyse the user's Western Armenian word or short phrase and retu
 Requirements:
 - Use Western Armenian, not Eastern Armenian.
 - Preserve traditional Western Armenian orthography.
-- Give natural vocabulary that a Western Armenian speaker could actually use.
-- Synonyms should be genuinely close in meaning.
-- Antonyms should only be included when a natural antonym exists.
-- Alternative phrasing should preserve the original meaning while showing other natural ways to express it.
+- Return only vocabulary and phrasing that you are confident is natural and semantically correct in Western Armenian.
+- Never guess. If you are uncertain whether an item is correct, omit it.
+- If a standalone word has several possible meanings and the user gives no context, use only its most common everyday meaning.
+- Do not mix literal, figurative, technical, or context-specific senses in the same result.
+- Synonyms and antonyms must match the same sense and grammatical role as the user's input.
+- A synonym must be naturally substitutable for the input in ordinary usage, not merely related, stronger, weaker, larger, taller, more intense, or associated with it.
+- Antonyms must be direct semantic opposites for that same sense. Do not include loosely contrasting or context-dependent words.
+- Never return the user's exact input as one of its own synonyms, antonyms, or alternatives.
+- Synonyms must have the same or a very closely related meaning. Do not include merely associated words.
+- For greetings, expressions, idioms, and short phrases, synonyms must be expressions that can naturally replace the input in the same conversational situation.
+- Antonyms must have a genuine opposite meaning. If there is no natural antonym, return an empty antonyms array.
+- Alternative phrasing must preserve the original communicative meaning and be usable naturally in a similar context.
+- Do not include words simply because they share letters, sounds, roots, or spelling with the input.
 - Do not invent words.
-- Avoid duplicate items.
-- Return no more than 6 items in each list.
-- If there is no clear antonym, return an empty antonyms array.
-- Do not include explanations, markdown, code fences, transliteration, headings, or commentary.
+- Do not include unrelated adjectives, nouns, verbs, or expressions.
+- Prefer fewer high-confidence results over filling the list with weak results.
+- Avoid duplicate or near-duplicate items.
+- Return no more than 5 items in each list.
+- Do not include explanations, English translations, markdown, code fences, transliteration, headings, or commentary.
 
 Return ONLY one valid JSON object in exactly this structure:
 {
@@ -630,16 +640,148 @@ Return ONLY one valid JSON object in exactly this structure:
         );
       }
 
+      const validationInstructions = `
+You are the quality-control reviewer for a Western Armenian thesaurus.
+
+You will receive:
+1. the original Western Armenian input;
+2. candidate synonyms;
+3. candidate antonyms;
+4. candidate alternative phrasings.
+
+Your task is ONLY to remove incorrect, weak, misleading, duplicated, or contextually mismatched candidates.
+
+Strict rules:
+- Do not add any new words or phrases.
+- Do not rewrite any candidate.
+- Keep an item only if you are highly confident it is correct Western Armenian.
+- Use the most common everyday sense when the original input has no context.
+- Do not mix literal, figurative, technical, or unrelated senses.
+- A synonym must be naturally substitutable for the original in the same sense and grammatical role.
+- Similar intensity alone is not enough to make something a synonym.
+- For example, words meaning tall, strong, powerful, intense, important, or enormous are not automatically synonyms for a word meaning big.
+- An antonym must be a direct semantic opposite of the same sense and grammatical role.
+- Do not keep merely contrasting or context-dependent words as antonyms.
+- Alternative phrasing must preserve the same communicative meaning and be natural Western Armenian.
+- Remove the exact original input if it appears in any candidate list.
+- Prefer an empty or short list instead of a questionable item.
+- Preserve the exact spelling of every candidate you keep.
+
+Return ONLY one valid JSON object:
+{
+  "synonyms": ["only retained candidates"],
+  "antonyms": ["only retained candidates"],
+  "alternatives": ["only retained candidates"]
+}
+`.trim();
+
+      const validationPayload =
+        JSON.stringify({
+          input: text,
+          candidates: result,
+        });
+
+      const validationResponse =
+        await client.responses.create({
+          model,
+
+          instructions:
+            validationInstructions,
+
+          input: [
+            {
+              role: "user",
+              content: [
+                {
+                  type:
+                    "input_text",
+                  text:
+                    validationPayload,
+                },
+              ],
+            },
+          ],
+
+          max_output_tokens:
+            1000,
+
+          ...(reasoning
+            ? {
+                reasoning,
+              }
+            : {}),
+
+          store: false,
+        });
+
+      const validationRaw =
+        validationResponse
+          .output_text
+          ?.trim();
+
+      if (!validationRaw) {
+        throw new Error(
+          "EMPTY_THESAURUS_VALIDATION_RESPONSE",
+        );
+      }
+
+      let validated:
+        ThesaurusResult;
+
+      try {
+        validated =
+          parseResult(
+            validationRaw,
+          );
+      } catch {
+        return json(
+          {
+            success: false,
+            error:
+              "The thesaurus results could not be validated. Please try again.",
+            code:
+              "invalid_validation_response",
+          },
+          502,
+          cors,
+        );
+      }
+
+      const normalizedInput =
+        text
+          .trim()
+          .toLocaleLowerCase();
+
+      const removeInput = (
+        items: string[],
+      ) =>
+        items.filter(
+          (item) =>
+            item
+              .trim()
+              .toLocaleLowerCase() !==
+            normalizedInput,
+        );
+
       return json(
         {
           success: true,
           input: text,
+
           synonyms:
-            result.synonyms,
+            removeInput(
+              validated.synonyms,
+            ),
+
           antonyms:
-            result.antonyms,
+            removeInput(
+              validated.antonyms,
+            ),
+
           alternatives:
-            result.alternatives,
+            removeInput(
+              validated.alternatives,
+            ),
         },
         200,
         cors,
