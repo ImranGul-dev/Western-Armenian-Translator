@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { DashboardShell } from "@/components/DashboardShell";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { useAuth } from "@/contexts/AuthContext";
-import { COUNTRY_OPTIONS } from "@/lib/countries";
+import { CountryPicker } from "@/components/CountryPicker";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export default function SettingsPage() {
@@ -75,21 +75,15 @@ export default function SettingsPage() {
             />
           </label>
 
-          <label>
-            Country
-            <select
+          <div className="country-field">
+            <span className="country-field-label">Country</span>
+            <CountryPicker
               value={countryCode}
-              onChange={(event) => setCountryCode(event.target.value)}
-              autoComplete="country"
-            >
-              <option value="">Not set</option>
-              {COUNTRY_OPTIONS.map((country) => (
-                <option key={country.code} value={country.code}>
-                  {country.name}
-                </option>
-              ))}
-            </select>
-          </label>
+              onChange={setCountryCode}
+              allowEmpty
+              emptyLabel="Not set"
+            />
+          </div>
 
           <label className="checkbox-label">
             <input
