@@ -75,7 +75,7 @@ export default function AdminSubscriptionsPage() {
                     <button disabled={!!busy} onClick={() => void act(row, "sync")}>Sync</button>
                     {row.access_suspended ? <button disabled={!!busy} onClick={() => void act(row, "resume")}>Resume</button> : <button disabled={!!busy} onClick={() => void act(row, "pause", { reason: "Paused by administrator" })}>Pause</button>}
                     {row.cancel_at_period_end ? <button disabled={!!busy} onClick={() => void act(row, "reactivate")}>Undo cancellation</button> : <button disabled={!!busy} onClick={() => void act(row, "cancel_at_period_end")}>Cancel at period end</button>}
-                    <button disabled={!!busy || row.plan_slug === "premium"} onClick={() => void act(row, "change_plan", { plan: "premium", prorationBehavior: "create_prorations" })}>Set Premium</button>
+                    <button disabled={!!busy || row.plan_slug === "premium"} onClick={() => void act(row, "change_plan", { plan: "premium", prorationBehavior: "create_prorations" })}>Set Person</button>
                     <button disabled={!!busy || row.plan_slug === "business"} onClick={() => void act(row, "change_plan", { plan: "business", prorationBehavior: "always_invoice" })}>Set Schools</button>
                     <button className="danger-button" disabled={!!busy || row.status === "canceled"} onClick={() => void act(row, "cancel_now")}>Cancel now</button>
                   </div></td>

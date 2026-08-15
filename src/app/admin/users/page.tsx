@@ -85,7 +85,7 @@ function UserPlanControl({ row, onSaved, setMessage }: { row: UserRow; onSaved: 
 
   return <div className="manual-plan-control">
     <select aria-label={`Manual plan for ${row.email || row.id}`} value={draft.selection} onChange={event => setDraft(current => ({ ...current, selection: event.target.value as OverrideDraft["selection"] }))}>
-      <option value="billing">Use billing/default</option><option value="free">Free</option><option value="premium">Premium</option><option value="business">Schools</option>
+      <option value="billing">Use billing/default</option><option value="free">Free</option><option value="premium">Person</option><option value="business">Schools</option>
     </select>
     <input type="datetime-local" aria-label="Override expiration" value={draft.expiresAt} onChange={event => setDraft(current => ({ ...current, expiresAt: event.target.value }))} />
     <input aria-label="Internal reason" placeholder="Internal reason / note" maxLength={1000} value={draft.reason} onChange={event => setDraft(current => ({ ...current, reason: event.target.value }))} />

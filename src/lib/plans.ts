@@ -19,7 +19,7 @@ export const FALLBACK_PLANS: Record<PlanSlug, Omit<Plan, "id">> = {
     widget_enabled: false, widget_site_limit: 0, widget_monthly_character_limit: null, widget_branding_removable: false
   },
   premium: {
-    slug: "premium", name: "Premium", price_monthly_cents: 900, monthly_character_limit: 300_000,
+    slug: "premium", name: "Person", price_monthly_cents: 900, monthly_character_limit: 300_000,
     max_characters_per_request: 5_000, history_limit: null, rate_limit_per_minute: 60,
     features: ["300,000 characters per month", "5,000 characters per request", "Full history", "Saved favourites", "One embeddable translator site", "Priority processing"],
     active: true, sort_order: 2, currency: "usd", billing_interval: "month",

@@ -1097,7 +1097,7 @@ export function Translator() {
             </p>
 
             <h2 id="upgrade-modal-title">
-              Keep translating with a premium plan
+              Keep translating with a Person or Schools plan
             </h2>
 
             <p
