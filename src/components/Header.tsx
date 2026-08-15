@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 import { PremiumFeatureNavButton } from "@/components/PremiumFeatureNavButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { hasPaidFeatureAccess } from "@/lib/paid-feature-access";
 import { useAuth } from "@/contexts/AuthContext";
 
 const TUN_LOGO_URL =
@@ -17,6 +18,7 @@ export function Header() {
   const {
     user,
     profile,
+    plan,
     loading,
     signOut,
   } = useAuth();
@@ -26,6 +28,21 @@ export function Header() {
       "language_editor" ||
     profile?.role ===
       "admin";
+
+  const hasThesaurusAccess =
+    hasPaidFeatureAccess(
+      "thesaurus",
+      {
+        isAuthenticated:
+          Boolean(user),
+
+        role:
+          profile?.role,
+
+        planSlug:
+          plan?.slug,
+      },
+    );
 
   const navClass = (
     href: string,
@@ -101,11 +118,24 @@ export function Header() {
               Translator
             </Link>
 
-            <PremiumFeatureNavButton
-              feature="thesaurus"
-              label="Thesaurus"
-              description="Explore Western Armenian synonyms, antonyms and alternative ways to express words and phrases."
-            />
+            {hasThesaurusAccess ? (
+              <Link
+                href="/thesaurus"
+                className={
+                  navClass(
+                    "/thesaurus",
+                  )
+                }
+              >
+                Thesaurus
+              </Link>
+            ) : (
+              <PremiumFeatureNavButton
+                feature="thesaurus"
+                label="Thesaurus"
+                description="Explore Western Armenian synonyms, antonyms and alternative ways to express words and phrases."
+              />
+            )}
 
             <PremiumFeatureNavButton
               feature="role_play"

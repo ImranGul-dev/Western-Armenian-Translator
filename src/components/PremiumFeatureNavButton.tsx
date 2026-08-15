@@ -25,6 +25,7 @@ export function PremiumFeatureNavButton({
 }: PremiumFeatureNavButtonProps) {
   const {
     user,
+    profile,
     plan,
     loading,
   } = useAuth();
@@ -40,6 +41,9 @@ export function PremiumFeatureNavButton({
       {
         isAuthenticated:
           Boolean(user),
+
+        role:
+          profile?.role,
 
         planSlug:
           plan?.slug,
