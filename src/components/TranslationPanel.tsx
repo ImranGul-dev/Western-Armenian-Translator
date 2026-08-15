@@ -252,13 +252,15 @@ export function TranslationPanel(
                 </span>
 
                 <VoiceListenButton
-                  text={props.value}
+                  text={props.transliteration}
                   language="hyw"
+                  mode="pronunciation"
+                  defaultSpeed={0.75}
                   disabled={
                     props.loading ||
-                    !props.value
+                    !props.transliteration
                   }
-                  label="Listen pronunciation"
+                  label="Pronunciation"
                   compact
                 />
               </div>

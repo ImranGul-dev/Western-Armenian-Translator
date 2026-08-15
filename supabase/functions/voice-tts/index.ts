@@ -48,6 +48,24 @@ function isAllowedPublishableKey(
   );
 }
 
+function naturalInstructions(
+  language: string,
+) {
+  if (language === "hyw") {
+    return "Read the supplied Armenian-script text naturally as Western Armenian. Speak clearly with natural conversational pacing. Preserve the supplied words exactly. Do not translate, rewrite, explain, add, or remove anything.";
+  }
+
+  if (language === "hye") {
+    return "Read the supplied Armenian-script text naturally as Eastern Armenian. Speak clearly with natural conversational pacing. Preserve the supplied words exactly. Do not translate, rewrite, explain, add, or remove anything.";
+  }
+
+  return "Read the supplied English text naturally and clearly. Preserve the supplied words exactly. Do not translate, rewrite, explain, add, or remove anything.";
+}
+
+function pronunciationInstructions() {
+  return "The supplied text is a Latin-script phonetic transliteration of Western Armenian. Pronounce it as Western Armenian phonetics, not as ordinary English words. Do not spell the individual letters. Speak slowly, carefully, and clearly for a learner practising pronunciation. Preserve the supplied words and sequence exactly. Do not translate, rewrite, explain, add, or remove anything.";
+}
+
 export default {
   async fetch(
     request: Request,
@@ -87,8 +105,10 @@ export default {
       return json(
         {
           success: false,
+
           error:
             "This website origin is not allowed to use the voice service.",
+
           requestId,
         },
         403,
@@ -116,13 +136,16 @@ export default {
       return json(
         {
           success: false,
+
           error:
             "Only POST requests are supported.",
+
           requestId,
         },
         405,
         {
           ...baseHeaders,
+
           Allow:
             "POST, OPTIONS",
         },
@@ -140,8 +163,10 @@ export default {
       return json(
         {
           success: false,
+
           error:
             "The Supabase project key is missing or invalid.",
+
           requestId,
         },
         401,
@@ -155,8 +180,10 @@ export default {
       return json(
         {
           success: false,
+
           error:
             "The voice backend is missing the OpenAI API key.",
+
           requestId,
         },
         500,
@@ -173,8 +200,10 @@ export default {
       return json(
         {
           success: false,
+
           error:
             "The request contains invalid JSON.",
+
           requestId,
         },
         400,
@@ -190,8 +219,10 @@ export default {
       return json(
         {
           success: false,
+
           error:
             "The voice request is invalid.",
+
           requestId,
         },
         400,
@@ -211,6 +242,18 @@ export default {
         ? values.text.trim()
         : "";
 
+    const language =
+      typeof values.language ===
+        "string"
+        ? values.language
+        : "en";
+
+    const mode =
+      values.mode ===
+        "pronunciation"
+        ? "pronunciation"
+        : "natural";
+
     const requestedVoice =
       typeof values.voice ===
         "string"
@@ -227,8 +270,10 @@ export default {
       return json(
         {
           success: false,
+
           error:
             "Text is required.",
+
           requestId,
         },
         400,
@@ -243,8 +288,10 @@ export default {
       return json(
         {
           success: false,
+
           error:
             `Voice playback currently supports up to ${MAX_TTS_CHARACTERS.toLocaleString()} characters at a time.`,
+
           requestId,
         },
         413,
@@ -265,6 +312,13 @@ export default {
       )
         ? requestedSpeed
         : 1;
+
+    const instructions =
+      mode === "pronunciation"
+        ? pronunciationInstructions()
+        : naturalInstructions(
+            language,
+          );
 
     let openAiResponse:
       Response;
@@ -294,8 +348,7 @@ export default {
                 input:
                   text,
 
-                instructions:
-                  "Speak clearly and naturally. The supplied text may be Western Armenian. Preserve the supplied words exactly. Do not translate, rewrite, add, remove, or explain anything. Use careful Armenian pronunciation and natural conversational pacing.",
+                instructions,
 
                 response_format:
                   "wav",
@@ -319,8 +372,10 @@ export default {
       return json(
         {
           success: false,
+
           error:
             "Voice generation is temporarily unavailable. Please try again.",
+
           requestId,
         },
         503,
@@ -333,26 +388,30 @@ export default {
       !openAiResponse.body
     ) {
       try {
-        const upstreamError =
+        const upstream =
           await openAiResponse.text();
 
         console.error(
           "OpenAI TTS error",
-          upstreamError,
+          upstream,
         );
       } catch {
-        // Ignore logging failure.
+        // Logging failed.
       }
 
       return json(
         {
           success: false,
+
           error:
             "Voice generation failed. Please try again.",
+
           requestId,
         },
-        openAiResponse.status >= 400 &&
-          openAiResponse.status < 600
+        openAiResponse.status >=
+          400 &&
+        openAiResponse.status <
+          600
           ? openAiResponse.status
           : 502,
         baseHeaders,
@@ -375,6 +434,9 @@ export default {
 
           "X-Voice-Speed":
             String(speed),
+
+          "X-Voice-Mode":
+            mode,
 
           "X-Content-Type-Options":
             "nosniff",

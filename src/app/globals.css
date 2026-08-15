@@ -1019,7 +1019,32 @@ html.dark .tun-logo-image {
   width: auto;
   min-width: 62px;
   padding: 0.3rem 0.4rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 5px;
+  background: var(--surface-soft);
+  color: var(--text);
   font-size: 0.78rem;
+  cursor: pointer;
+  color-scheme: light;
+}
+
+html.dark .voice-speed-select {
+  color-scheme: dark;
+}
+
+.voice-speed-select option {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.voice-speed-select:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--surface-muted);
+}
+
+.voice-speed-select:focus-visible {
+  border-color: var(--accent);
+  box-shadow: var(--focus);
 }
 
 .transliteration-heading-row {

@@ -25,12 +25,18 @@ type VoiceSpeed =
   | 1.25
   | 1.5;
 
+type VoiceMode =
+  | "natural"
+  | "pronunciation";
+
 interface VoiceListenButtonProps {
   text: string;
   language: LanguageCode;
   disabled?: boolean;
   label?: string;
   compact?: boolean;
+  mode?: VoiceMode;
+  defaultSpeed?: VoiceSpeed;
 }
 
 function voiceFunctionUrl() {
@@ -52,6 +58,8 @@ export function VoiceListenButton({
   disabled = false,
   label = "Listen",
   compact = false,
+  mode = "natural",
+  defaultSpeed = 1,
 }: VoiceListenButtonProps) {
   const [
     state,
@@ -64,7 +72,7 @@ export function VoiceListenButton({
     speed,
     setSpeed,
   ] = useState<VoiceSpeed>(
-    1,
+    defaultSpeed,
   );
 
   const [
@@ -89,26 +97,21 @@ export function VoiceListenButton({
 
   function stopAudio() {
     controllerRef.current?.abort();
-
-    controllerRef.current =
-      null;
+    controllerRef.current = null;
 
     if (sourceRef.current) {
       try {
         sourceRef.current.stop();
       } catch {
-        // Audio already stopped.
+        // Audio may already be stopped.
       }
 
-      sourceRef.current =
-        null;
+      sourceRef.current = null;
     }
 
     if (contextRef.current) {
       void contextRef.current.close();
-
-      contextRef.current =
-        null;
+      contextRef.current = null;
     }
 
     setState("idle");
@@ -122,7 +125,7 @@ export function VoiceListenButton({
         try {
           sourceRef.current.stop();
         } catch {
-          // Audio already stopped.
+          // Audio may already be stopped.
         }
       }
 
@@ -193,6 +196,7 @@ export function VoiceListenButton({
               JSON.stringify({
                 text,
                 language,
+                mode,
                 voice:
                   "marin",
                 speed,
@@ -344,7 +348,11 @@ export function VoiceListenButton({
         }
         title={
           error ||
-          "AI-generated voice"
+          (
+            mode === "pronunciation"
+              ? "Hear Western Armenian pronunciation from the Latin transliteration"
+              : "Listen using an AI-generated voice"
+          )
         }
       >
         <span aria-hidden="true">
@@ -364,7 +372,11 @@ export function VoiceListenButton({
 
       <select
         className="voice-speed-select"
-        aria-label="Voice speed"
+        aria-label={
+          mode === "pronunciation"
+            ? "Pronunciation speed"
+            : "Voice speed"
+        }
         value={speed}
         disabled={
           state === "loading"
