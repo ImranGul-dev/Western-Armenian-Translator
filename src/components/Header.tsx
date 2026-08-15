@@ -1,7 +1,9 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+
+import { PremiumFeatureNavButton } from "@/components/PremiumFeatureNavButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -9,14 +11,32 @@ const TUN_LOGO_URL =
   "https://tunapp.com/wp-content/uploads/2020/09/Tun-Logo_Web-Black_80.png";
 
 export function Header() {
-  const pathname = usePathname();
-  const { user, profile, loading, signOut } = useAuth();
+  const pathname =
+    usePathname();
+
+  const {
+    user,
+    profile,
+    loading,
+    signOut,
+  } = useAuth();
 
   const isEditor =
-    profile?.role === "language_editor" || profile?.role === "admin";
+    profile?.role ===
+      "language_editor" ||
+    profile?.role ===
+      "admin";
 
-  const navClass = (href: string) =>
-    pathname === href || (href !== "/" && pathname.startsWith(href))
+  const navClass = (
+    href: string,
+  ) =>
+    pathname === href ||
+    (
+      href !== "/" &&
+      pathname.startsWith(
+        href,
+      )
+    )
       ? "nav-link active"
       : "nav-link";
 
@@ -24,7 +44,10 @@ export function Header() {
     <>
       <div className="brand-strip">
         <div className="shell brand-strip-inner">
-          <span>Western Armenian language technology by Tun</span>
+          <span>
+            Western Armenian language technology by Tun
+          </span>
+
           <span className="brand-strip-note">
             English · Western Armenian · Eastern Armenian
           </span>
@@ -49,37 +72,80 @@ export function Header() {
               />
             </Link>
 
-            <span className="brand-divider" aria-hidden="true" />
+            <span
+              className="brand-divider"
+              aria-hidden="true"
+            />
 
             <div className="brand-copy">
               <span className="brand-title">
                 Western Armenian Translator
               </span>
+
               <span className="brand-subtitle">
                 Translate with Tun
               </span>
             </div>
           </div>
 
-          <nav className="main-nav" aria-label="Main navigation">
-            <Link href="/" className={navClass("/")}>
+          <nav
+            className="main-nav"
+            aria-label="Main navigation"
+          >
+            <Link
+              href="/"
+              className={
+                navClass("/")
+              }
+            >
               Translator
             </Link>
 
+            <PremiumFeatureNavButton
+              label="Thesaurus"
+              description="Explore Western Armenian synonyms, antonyms and alternative ways to express words and phrases."
+            />
+
+            <PremiumFeatureNavButton
+              label="Role-Play"
+              description="Practise real-world Western Armenian conversations through interactive learning scenarios."
+            />
+
             {!user && (
-              <Link href="/pricing" className={navClass("/pricing")}>
+              <Link
+                href="/pricing"
+                className={
+                  navClass(
+                    "/pricing",
+                  )
+                }
+              >
                 Pricing
               </Link>
             )}
 
             {user && (
-              <Link href="/dashboard" className={navClass("/dashboard")}>
+              <Link
+                href="/dashboard"
+                className={
+                  navClass(
+                    "/dashboard",
+                  )
+                }
+              >
                 Dashboard
               </Link>
             )}
 
             {isEditor && (
-              <Link href="/admin" className={navClass("/admin")}>
+              <Link
+                href="/admin"
+                className={
+                  navClass(
+                    "/admin",
+                  )
+                }
+              >
                 Admin
               </Link>
             )}
@@ -87,19 +153,26 @@ export function Header() {
 
           <div className="header-actions">
             {!loading &&
-              (user ? (
-                <button
-                  className="text-button"
-                  type="button"
-                  onClick={() => void signOut()}
-                >
-                  Log out
-                </button>
-              ) : (
-                <Link className="text-button" href="/login">
-                  Log in
-                </Link>
-              ))}
+              (
+                user ? (
+                  <button
+                    className="text-button"
+                    type="button"
+                    onClick={() =>
+                      void signOut()
+                    }
+                  >
+                    Log out
+                  </button>
+                ) : (
+                  <Link
+                    className="text-button"
+                    href="/login"
+                  >
+                    Log in
+                  </Link>
+                )
+              )}
 
             <ThemeToggle />
           </div>
