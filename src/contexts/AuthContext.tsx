@@ -58,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const supabase = getSupabaseBrowserClient();
     const [{ data: profileRow, error: profileError }, { data: effectiveRow, error: effectiveError }] = await Promise.all([
-      supabase.from("profiles").select("id,email,display_name,role,history_enabled,query_review_consent,current_plan_id,last_active_at,created_at,updated_at").eq("id", user.id).maybeSingle(),
+      supabase.from("profiles").select("id,email,display_name,country_code,role,history_enabled,query_review_consent,current_plan_id,last_active_at,created_at,updated_at").eq("id", user.id).maybeSingle(),
       supabase.rpc("get_my_effective_plan")
     ]);
 

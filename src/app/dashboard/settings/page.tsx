@@ -1,21 +1,24 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { DashboardShell } from "@/components/DashboardShell";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { useAuth } from "@/contexts/AuthContext";
+import { COUNTRY_OPTIONS } from "@/lib/countries";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export default function SettingsPage() {
   const { profile, refreshProfile } = useAuth();
   const [name, setName] = useState("");
+  const [countryCode, setCountryCode] = useState("");
   const [history, setHistory] = useState(true);
   const [queryReviewConsent, setQueryReviewConsent] = useState(false);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
     setName(profile?.display_name || "");
+    setCountryCode(profile?.country_code || "");
     setHistory(profile?.history_enabled ?? true);
     setQueryReviewConsent(profile?.query_review_consent ?? false);
   }, [profile]);
@@ -32,6 +35,7 @@ export default function SettingsPage() {
       .from("profiles")
       .update({
         display_name: name,
+        country_code: countryCode || null,
         history_enabled: history,
         query_review_consent: allowAdminReview,
       })
@@ -69,6 +73,22 @@ export default function SettingsPage() {
               value={name}
               onChange={(event) => setName(event.target.value)}
             />
+          </label>
+
+          <label>
+            Country
+            <select
+              value={countryCode}
+              onChange={(event) => setCountryCode(event.target.value)}
+              autoComplete="country"
+            >
+              <option value="">Not set</option>
+              {COUNTRY_OPTIONS.map((country) => (
+                <option key={country.code} value={country.code}>
+                  {country.name}
+                </option>
+              ))}
+            </select>
           </label>
 
           <label className="checkbox-label">

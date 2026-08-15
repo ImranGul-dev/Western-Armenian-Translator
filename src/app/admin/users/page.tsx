@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { DashboardShell } from "@/components/DashboardShell";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { getCountryName } from "@/lib/countries";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { EffectivePlan, PlanSlug, ProfileRole, UserPlanOverride } from "@/types/database";
 
@@ -20,6 +21,7 @@ interface UserRow {
   id: string;
   email: string | null;
   display_name: string | null;
+  country_code: string | null;
   role: ProfileRole;
   created_at: string;
   last_active_at: string | null;
@@ -119,7 +121,16 @@ export default function AdminUsersPage() {
     const paid = row.effective_plan.source === "stripe";
     const manual = row.effective_plan.source === "manual";
     const matchesSubscriber = subscriberFilter === "all" || (subscriberFilter === "paid" ? paid : subscriberFilter === "manual" ? manual : row.effective_plan.slug === "free");
-    return matchesSubscriber && (!needle || row.id.includes(needle) || row.email?.toLocaleLowerCase().includes(needle) || row.display_name?.toLocaleLowerCase().includes(needle));
+    const countryName = getCountryName(row.country_code).toLocaleLowerCase();
+
+    return matchesSubscriber && (
+      !needle ||
+      row.id.includes(needle) ||
+      row.email?.toLocaleLowerCase().includes(needle) ||
+      row.display_name?.toLocaleLowerCase().includes(needle) ||
+      row.country_code?.toLocaleLowerCase().includes(needle) ||
+      countryName.includes(needle)
+    );
   }), [rows, search, subscriberFilter]);
 
   async function updateRole(id: string, role: ProfileRole) {
@@ -132,9 +143,13 @@ export default function AdminUsersPage() {
   return <ProtectedRoute roles={["admin"]}><DashboardShell admin title="Users and plan access" description="Review Stripe state, effective application plans, manual grants, activity and roles without creating fake billing records.">
     {message && <div className="info-banner">{message}</div>}
     <section className="dashboard-card">
-      <div className="card-heading"><div><h2>User directory</h2><p>{visible.length} matching users.</p></div><div className="table-actions"><input placeholder="Search name, email or user ID" value={search} onChange={event => setSearch(event.target.value)} /><select value={subscriberFilter} onChange={event => setSubscriberFilter(event.target.value)}><option value="all">All users</option><option value="paid">Stripe plan</option><option value="manual">Manual plan</option><option value="free">Effective Free</option></select><button onClick={() => void load()}>Refresh</button></div></div>
-      <div className="admin-table-wrap"><table className="admin-table users-plan-table"><thead><tr><th>User</th><th>Activity</th><th>Stripe subscription</th><th>Effective plan</th><th>Manual plan control</th><th>Role</th></tr></thead><tbody>{visible.map(row => <tr key={row.id}>
+      <div className="card-heading"><div><h2>User directory</h2><p>{visible.length} matching users.</p></div><div className="table-actions"><input placeholder="Search name, email, country or user ID" value={search} onChange={event => setSearch(event.target.value)} /><select value={subscriberFilter} onChange={event => setSubscriberFilter(event.target.value)}><option value="all">All users</option><option value="paid">Stripe plan</option><option value="manual">Manual plan</option><option value="free">Effective Free</option></select><button onClick={() => void load()}>Refresh</button></div></div>
+      <div className="admin-table-wrap"><table className="admin-table users-plan-table"><thead><tr><th>User</th><th>Country</th><th>Activity</th><th>Stripe subscription</th><th>Effective plan</th><th>Manual plan control</th><th>Role</th></tr></thead><tbody>{visible.map(row => <tr key={row.id}>
         <td><strong>{row.display_name || "Unnamed user"}</strong><small>{row.email || row.id}</small></td>
+        <td>
+          <strong>{getCountryName(row.country_code)}</strong>
+          {row.country_code && <small>{row.country_code}</small>}
+        </td>
         <td><small>Joined: {new Date(row.created_at).toLocaleDateString()}</small><small>Last active: {row.last_active_at ? new Date(row.last_active_at).toLocaleString() : "Never"}</small></td>
         <td><strong>{row.subscription?.plan_slug || "None"}</strong><span className="status-pill">{row.subscription?.access_suspended ? "paused" : row.subscription?.status || "none"}</span>{row.subscription?.cancel_at_period_end && <small>Cancels at period end</small>}</td>
         <td><strong>{row.effective_plan.name}</strong><small>Source: {row.effective_plan.source}</small>{row.override && <small>Override record: {row.override.plan_slug}{row.override.expires_at ? ` · ${new Date(row.override.expires_at).getTime() <= Date.now() ? "expired" : "expires"} ${new Date(row.override.expires_at).toLocaleString()}` : " · no expiration"}</small>}<small>Widget: {row.effective_plan.widget_enabled ? `Eligible (${row.effective_plan.widget_site_limit} sites)` : "Not eligible"}</small></td>

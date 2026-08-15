@@ -49,6 +49,7 @@ export interface Profile {
   id: string;
   email: string | null;
   display_name: string | null;
+  country_code: string | null;
   role: ProfileRole;
   history_enabled: boolean;
   query_review_consent: boolean;

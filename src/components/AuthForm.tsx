@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState } from "react";
+import { COUNTRY_OPTIONS } from "@/lib/countries";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 function safeNext(value: string | null): string {
@@ -16,6 +17,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" | "forgot" }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [countryCode, setCountryCode] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -37,7 +39,10 @@ export function AuthForm({ mode }: { mode: "login" | "signup" | "forgot" }) {
           email,
           password,
           options: {
-            data: { display_name: name },
+            data: {
+              display_name: name,
+              country_code: countryCode,
+            },
             emailRedirectTo: `${location.origin}${next}`
           }
         });
@@ -64,7 +69,35 @@ export function AuthForm({ mode }: { mode: "login" | "signup" | "forgot" }) {
 
   return (
     <form className="auth-form" onSubmit={submit}>
-      {mode === "signup" && <label>Display name<input value={name} onChange={event => setName(event.target.value)} autoComplete="name" /></label>}
+            {mode === "signup" && (
+        <>
+          <label>
+            Display name
+            <input
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              autoComplete="name"
+            />
+          </label>
+
+          <label>
+            Country
+            <select
+              required
+              value={countryCode}
+              onChange={(event) => setCountryCode(event.target.value)}
+              autoComplete="country"
+            >
+              <option value="">Select your country</option>
+              {COUNTRY_OPTIONS.map((country) => (
+                <option key={country.code} value={country.code}>
+                  {country.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </>
+      )}
       <label>Email<input type="email" required value={email} onChange={event => setEmail(event.target.value)} autoComplete="email" /></label>
       {mode !== "forgot" && <label>Password<input type="password" minLength={8} required value={password} onChange={event => setPassword(event.target.value)} autoComplete={mode === "login" ? "current-password" : "new-password"} /></label>}
       <button className="primary-button full-button" disabled={busy}>{busy ? "Please wait…" : mode === "login" ? "Log in" : mode === "signup" ? "Create account" : "Send reset email"}</button>
