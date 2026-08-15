@@ -215,6 +215,7 @@ export function TranslationPanel(
               }
             />
           </div>
+
           {props.mobileFooterAction ? (
             <div className="mobile-source-translate-wrap">
               {props.mobileFooterAction}
@@ -282,7 +283,7 @@ export function TranslationPanel(
           <div className="panel-footer-row output-footer">
             <span>
               {props.value
-                ? `${LANGUAGES[props.language].name} - AI-generated voice available`
+                ? "Audio playback is available on paid plans"
                 : ""}
             </span>
 

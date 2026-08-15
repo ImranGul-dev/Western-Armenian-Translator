@@ -1,4 +1,12 @@
 import {
+  createClient,
+} from "@supabase/supabase-js";
+
+import {
+  resolveAccount,
+} from "../_shared/account.ts";
+
+import {
   buildCorsHeaders,
   isOriginAllowed,
 } from "../_shared/cors.ts";
@@ -170,6 +178,119 @@ export default {
           requestId,
         },
         401,
+        baseHeaders,
+      );
+    }
+
+    if (
+      !config.supabaseUrl ||
+      !config.adminKey
+    ) {
+      return json(
+        {
+          success: false,
+
+          error:
+            "The voice backend is missing its Supabase server configuration.",
+
+          requestId,
+        },
+        500,
+        baseHeaders,
+      );
+    }
+
+    const admin =
+      createClient(
+        config.supabaseUrl,
+        config.adminKey,
+        {
+          auth: {
+            persistSession:
+              false,
+
+            autoRefreshToken:
+              false,
+          },
+        },
+      );
+
+    let account;
+
+    try {
+      account =
+        await resolveAccount(
+          admin,
+          request,
+          "voice-tts-anonymous",
+        );
+    } catch (error) {
+      console.error(
+        "Voice account lookup failed",
+        error,
+      );
+
+      return json(
+        {
+          success: false,
+
+          error:
+            "Could not verify audio access. Please try again.",
+
+          requestId,
+        },
+        503,
+        baseHeaders,
+      );
+    }
+
+    if (!account.userId) {
+      return json(
+        {
+          success: false,
+
+          error:
+            "Please log in with a paid account to use audio.",
+
+          code:
+            "AUTH_REQUIRED",
+
+          upgradeRecommended:
+            true,
+
+          requestId,
+        },
+        401,
+        baseHeaders,
+      );
+    }
+
+    const paidVoiceAccess =
+      account.role === "admin" ||
+      account.plan.slug ===
+        "premium" ||
+      account.plan.slug ===
+        "business" ||
+      account.plan.slug ===
+        "admin";
+
+    if (!paidVoiceAccess) {
+      return json(
+        {
+          success: false,
+
+          error:
+            "Audio is available to paid users.",
+
+          code:
+            "PAID_PLAN_REQUIRED",
+
+          upgradeRecommended:
+            true,
+
+          requestId,
+        },
+        403,
         baseHeaders,
       );
     }
