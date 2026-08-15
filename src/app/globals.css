@@ -1403,13 +1403,15 @@ html.dark .voice-speed-select {
 }
 
 /* Country picker */
-.form-grid .country-field {
+.form-grid .country-field,
+.auth-form .country-field {
   display: grid;
   gap: 6px;
   min-width: 0;
 }
 
-.form-grid .country-field-label {
+.form-grid .country-field-label,
+.auth-form .country-field-label {
   font-size: 14px;
   font-weight: 700;
   text-transform: capitalize;
