@@ -1,6 +1,6 @@
 import {
   createClient,
-} from "@supabase/supabase-js";
+} from "npm:@supabase/supabase-js@2";
 
 import {
   resolveAccount,

@@ -1,4 +1,4 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 import type { AccountContext, PlanConfig, RateLimitResult } from "./types.ts";
 import { sha256Hex } from "./security.ts";
 
