@@ -19,10 +19,18 @@ type VoiceState =
   | "loading"
   | "playing";
 
+type VoiceSpeed =
+  | 0.75
+  | 1
+  | 1.25
+  | 1.5;
+
 interface VoiceListenButtonProps {
   text: string;
   language: LanguageCode;
   disabled?: boolean;
+  label?: string;
+  compact?: boolean;
 }
 
 function voiceFunctionUrl() {
@@ -38,29 +46,26 @@ function voiceFunctionUrl() {
   return `${url}/functions/v1/voice-tts`;
 }
 
-function voiceInstructions(
-  language: LanguageCode,
-) {
-  if (language === "hyw") {
-    return "Western Armenian";
-  }
-
-  if (language === "hye") {
-    return "Eastern Armenian";
-  }
-
-  return "English";
-}
-
 export function VoiceListenButton({
   text,
   language,
   disabled = false,
+  label = "Listen",
+  compact = false,
 }: VoiceListenButtonProps) {
   const [
     state,
     setState,
-  ] = useState<VoiceState>("idle");
+  ] = useState<VoiceState>(
+    "idle",
+  );
+
+  const [
+    speed,
+    setSpeed,
+  ] = useState<VoiceSpeed>(
+    1,
+  );
 
   const [
     error,
@@ -84,21 +89,26 @@ export function VoiceListenButton({
 
   function stopAudio() {
     controllerRef.current?.abort();
-    controllerRef.current = null;
+
+    controllerRef.current =
+      null;
 
     if (sourceRef.current) {
       try {
         sourceRef.current.stop();
       } catch {
-        // Audio may already have finished.
+        // Audio already stopped.
       }
 
-      sourceRef.current = null;
+      sourceRef.current =
+        null;
     }
 
     if (contextRef.current) {
       void contextRef.current.close();
-      contextRef.current = null;
+
+      contextRef.current =
+        null;
     }
 
     setState("idle");
@@ -112,7 +122,7 @@ export function VoiceListenButton({
         try {
           sourceRef.current.stop();
         } catch {
-          // Audio may already have finished.
+          // Audio already stopped.
         }
       }
 
@@ -124,8 +134,8 @@ export function VoiceListenButton({
 
   async function listen() {
     if (
-      state === "playing" ||
-      state === "loading"
+      state === "loading" ||
+      state === "playing"
     ) {
       stopAudio();
       return;
@@ -144,17 +154,8 @@ export function VoiceListenButton({
     controllerRef.current =
       controller;
 
-    /*
-     * Create/resume the AudioContext directly
-     * from the user's click. This avoids browser
-     * autoplay restrictions after the network
-     * request finishes.
-     */
-    const AudioContextClass =
-      window.AudioContext;
-
     const context =
-      new AudioContextClass();
+      new AudioContext();
 
     contextRef.current =
       context;
@@ -191,14 +192,10 @@ export function VoiceListenButton({
             body:
               JSON.stringify({
                 text,
-
+                language,
                 voice:
                   "marin",
-
-                language:
-                  voiceInstructions(
-                    language,
-                  ),
+                speed,
               }),
 
             cache:
@@ -307,12 +304,12 @@ export function VoiceListenButton({
         cause,
       );
 
-      const message =
+      setError(
         cause instanceof Error
           ? cause.message
-          : "Voice playback failed.";
+          : "Voice playback failed.",
+      );
 
-      setError(message);
       setState("idle");
 
       if (
@@ -327,43 +324,76 @@ export function VoiceListenButton({
     }
   }
 
-  const label =
-    state === "loading"
-      ? "Preparing..."
-      : state === "playing"
-        ? "Stop"
-        : error
-          ? "Try voice again"
-          : "Listen";
-
   return (
-    <button
-      type="button"
-      className="panel-action"
-      disabled={
-        disabled ||
-        !text.trim()
-      }
-      onClick={() =>
-        void listen()
-      }
-      aria-label={
-        state === "playing"
-          ? "Stop AI-generated voice"
-          : "Listen to AI-generated voice"
-      }
-      title={
-        error ||
-        "Listen using an AI-generated voice"
-      }
+    <span
+      className={`voice-listen-control ${
+        compact
+          ? "voice-listen-control-compact"
+          : ""
+      }`}
     >
-      <span aria-hidden="true">
-        {"\uD83D\uDD0A"}
-      </span>
+      <button
+        type="button"
+        className="panel-action"
+        disabled={
+          disabled ||
+          !text.trim()
+        }
+        onClick={() =>
+          void listen()
+        }
+        title={
+          error ||
+          "AI-generated voice"
+        }
+      >
+        <span aria-hidden="true">
+          {"\uD83D\uDD0A"}
+        </span>
 
-      <span>
-        {label}
-      </span>
-    </button>
+        <span>
+          {state === "loading"
+            ? "Preparing..."
+            : state === "playing"
+              ? "Stop"
+              : error
+                ? "Try again"
+                : label}
+        </span>
+      </button>
+
+      <select
+        className="voice-speed-select"
+        aria-label="Voice speed"
+        value={speed}
+        disabled={
+          state === "loading"
+        }
+        onChange={(event) =>
+          setSpeed(
+            Number(
+              event.target.value,
+            ) as VoiceSpeed,
+          )
+        }
+        title="Voice speed"
+      >
+        <option value="0.75">
+          0.75x
+        </option>
+
+        <option value="1">
+          1x
+        </option>
+
+        <option value="1.25">
+          1.25x
+        </option>
+
+        <option value="1.5">
+          1.5x
+        </option>
+      </select>
+    </span>
   );
 }

@@ -1006,3 +1006,42 @@ html.dark .tun-logo-image {
     max-width: none;
   }
 }
+
+/* Voice playback controls */
+
+.voice-listen-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.voice-speed-select {
+  width: auto;
+  min-width: 62px;
+  padding: 0.3rem 0.4rem;
+  font-size: 0.78rem;
+}
+
+.transliteration-heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.35rem;
+}
+
+.voice-listen-control-compact .panel-action {
+  font-size: 0.78rem;
+}
+
+.voice-listen-control-compact .voice-speed-select {
+  font-size: 0.72rem;
+  min-width: 58px;
+}
+
+@media (max-width: 700px) {
+  .transliteration-heading-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

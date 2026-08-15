@@ -246,9 +246,22 @@ export function TranslationPanel(
               className="transliteration-block"
               aria-live="polite"
             >
-              <span className="transliteration-label">
-                Latin transliteration
-              </span>
+              <div className="transliteration-heading-row">
+                <span className="transliteration-label">
+                  Latin transliteration
+                </span>
+
+                <VoiceListenButton
+                  text={props.value}
+                  language="hyw"
+                  disabled={
+                    props.loading ||
+                    !props.value
+                  }
+                  label="Listen pronunciation"
+                  compact
+                />
+              </div>
 
               <span className="transliteration-text">
                 {

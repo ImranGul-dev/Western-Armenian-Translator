@@ -14,6 +14,13 @@ const ALLOWED_VOICES = new Set([
   "cedar",
 ]);
 
+const ALLOWED_SPEEDS = new Set([
+  0.75,
+  1,
+  1.25,
+  1.5,
+]);
+
 function json(
   body: Record<string, unknown>,
   status: number,
@@ -80,10 +87,8 @@ export default {
       return json(
         {
           success: false,
-
           error:
             "This website origin is not allowed to use the voice service.",
-
           requestId,
         },
         403,
@@ -111,16 +116,15 @@ export default {
       return json(
         {
           success: false,
-
           error:
             "Only POST requests are supported.",
-
           requestId,
         },
         405,
         {
           ...baseHeaders,
-          Allow: "POST, OPTIONS",
+          Allow:
+            "POST, OPTIONS",
         },
       );
     }
@@ -136,10 +140,8 @@ export default {
       return json(
         {
           success: false,
-
           error:
             "The Supabase project key is missing or invalid.",
-
           requestId,
         },
         401,
@@ -153,10 +155,8 @@ export default {
       return json(
         {
           success: false,
-
           error:
             "The voice backend is missing the OpenAI API key.",
-
           requestId,
         },
         500,
@@ -173,10 +173,8 @@ export default {
       return json(
         {
           success: false,
-
           error:
             "The request contains invalid JSON.",
-
           requestId,
         },
         400,
@@ -192,10 +190,8 @@ export default {
       return json(
         {
           success: false,
-
           error:
             "The voice request is invalid.",
-
           requestId,
         },
         400,
@@ -221,14 +217,18 @@ export default {
         ? values.voice
         : "marin";
 
+    const requestedSpeed =
+      typeof values.speed ===
+        "number"
+        ? values.speed
+        : 1;
+
     if (!text) {
       return json(
         {
           success: false,
-
           error:
             "Text is required.",
-
           requestId,
         },
         400,
@@ -243,10 +243,8 @@ export default {
       return json(
         {
           success: false,
-
           error:
             `Voice playback currently supports up to ${MAX_TTS_CHARACTERS.toLocaleString()} characters at a time.`,
-
           requestId,
         },
         413,
@@ -260,6 +258,13 @@ export default {
       )
         ? requestedVoice
         : "marin";
+
+    const speed =
+      ALLOWED_SPEEDS.has(
+        requestedSpeed,
+      )
+        ? requestedSpeed
+        : 1;
 
     let openAiResponse:
       Response;
@@ -290,7 +295,7 @@ export default {
                   text,
 
                 instructions:
-                  "Speak clearly and naturally. The supplied text may be Western Armenian. Preserve the supplied words exactly. Do not translate, rewrite, add, remove, or explain anything. Use natural, careful pronunciation and a comfortable conversational speaking speed.",
+                  "Speak clearly and naturally. The supplied text may be Western Armenian. Preserve the supplied words exactly. Do not translate, rewrite, add, remove, or explain anything. Use careful Armenian pronunciation and natural conversational pacing.",
 
                 response_format:
                   "wav",
@@ -298,8 +303,7 @@ export default {
                 stream_format:
                   "audio",
 
-                speed:
-                  1.0,
+                speed,
               }),
 
             signal:
@@ -315,10 +319,8 @@ export default {
       return json(
         {
           success: false,
-
           error:
             "Voice generation is temporarily unavailable. Please try again.",
-
           requestId,
         },
         503,
@@ -330,72 +332,33 @@ export default {
       !openAiResponse.ok ||
       !openAiResponse.body
     ) {
-      let detail =
-        "OpenAI voice generation failed.";
-
       try {
-        const errorBody =
-          await openAiResponse.json();
+        const upstreamError =
+          await openAiResponse.text();
 
-        if (
-          errorBody &&
-          typeof errorBody ===
-            "object"
-        ) {
-          const record =
-            errorBody as Record<
-              string,
-              unknown
-            >;
-
-          const errorRecord =
-            record.error &&
-            typeof record.error ===
-              "object"
-              ? record.error as Record<
-                  string,
-                  unknown
-                >
-              : null;
-
-          if (
-            errorRecord &&
-            typeof errorRecord.message ===
-              "string"
-          ) {
-            console.error(
-              "OpenAI TTS error",
-              errorRecord.message,
-            );
-          }
-        }
+        console.error(
+          "OpenAI TTS error",
+          upstreamError,
+        );
       } catch {
-        // Do not expose upstream details to the browser.
+        // Ignore logging failure.
       }
 
       return json(
         {
           success: false,
-          error: detail,
+          error:
+            "Voice generation failed. Please try again.",
           requestId,
         },
-        openAiResponse.status >=
-          400 &&
-        openAiResponse.status <
-          600
+        openAiResponse.status >= 400 &&
+          openAiResponse.status < 600
           ? openAiResponse.status
           : 502,
         baseHeaders,
       );
     }
 
-    /*
-     * Important:
-     *
-     * We do not buffer the generated audio here.
-     * The OpenAI response stream is passed directly
-     * through the Supabase Edge Function.
-     */
     return new Response(
       openAiResponse.body,
       {
@@ -409,6 +372,9 @@ export default {
 
           "X-Voice":
             voice,
+
+          "X-Voice-Speed":
+            String(speed),
 
           "X-Content-Type-Options":
             "nosniff",
