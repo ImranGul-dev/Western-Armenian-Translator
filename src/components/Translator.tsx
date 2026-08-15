@@ -1124,17 +1124,25 @@ export function Translator() {
                 View plans
               </Link>
 
-              <button
-                type="button"
-                className="upgrade-modal-secondary"
+              <Link
+                href="/signup?next=%2Fpricing"
+                className="upgrade-modal-secondary premium-modal-link"
                 onClick={() => setUpgradeModalOpen(false)}
               >
-                Maybe later
-              </button>
+                Sign up
+              </Link>
+
+              <Link
+                href="/login"
+                className="upgrade-modal-secondary premium-modal-link"
+                onClick={() => setUpgradeModalOpen(false)}
+              >
+                Log in
+              </Link>
             </div>
 
             <p className="upgrade-modal-note">
-              You will create or log in to your account before completing a paid plan.
+              Create an account or log in to continue with account and plan options.
             </p>
           </section>
         </div>
