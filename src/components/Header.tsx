@@ -141,6 +141,8 @@ export function Header() {
               feature="role_play"
               label="Role-Play"
               description="Practise real-world Western Armenian conversations through interactive learning scenarios."
+              href="/role-play"
+              className={`${navClass("/role-play")} premium-feature-nav-link`}
             />
 
             {!user && (
