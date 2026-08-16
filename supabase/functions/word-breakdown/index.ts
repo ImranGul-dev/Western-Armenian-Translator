@@ -708,8 +708,11 @@ Breakdown requirements:
 - Do not create separate entries for punctuation alone.
 - "meaning" explains that word or segment in the context of this sentence.
 - "partOfSpeech" is a short English grammatical label such as noun, verb, adjective, adverb, pronoun, preposition, conjunction, article, particle, auxiliary, or phrase. Leave empty if uncertain.
-- "baseForm" is the dictionary/base Western Armenian form only when you are confident. Otherwise return an empty string.
+- "baseForm" must be the true dictionary/headword form only when you are confident. Otherwise return an empty string.
+- For a conjugated verb, "baseForm" must be the Western Armenian infinitive/dictionary form, never another conjugated form. Example: forms such as "եմ", "ես", "է", "ենք", "էք", or "են" must use "ըլլալ" as the base form when they are forms of the verb "to be".
+- For nouns, adjectives, pronouns, adverbs, and other words, do not invent a different lemma merely to fill the field.
 - "grammarNote" should briefly explain relevant tense, person, number, article, suffix, possession, case, negation, particle, or construction when useful. Otherwise return an empty string.
+- Armenian question punctuation does not by itself indicate politeness. Never describe a word or construction as polite unless the wording or grammatical construction actually expresses politeness.
 - Do not omit meaningful words merely because they are common particles or grammatical words.
 - "notes" may contain up to 3 short learning notes about the whole expression. Prefer useful Western Armenian usage or grammar observations. Return an empty array if none are needed.
 - Keep explanations concise and suitable for a language learner.
