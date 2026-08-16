@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { AdminHelp } from "@/components/AdminHelp";
+import { useAuth } from "@/contexts/AuthContext";
 
 const ADMIN_ITEMS = [
   {
@@ -37,6 +38,14 @@ const ADMIN_ITEMS = [
       "Use this section to save high-quality source and translation examples. These examples help guide the translator toward approved wording and style when similar text is translated.",
     example:
       "Save an approved translation of 'How are you?' so it can be used as a quality reference for similar translations.",
+  },
+  {
+    href: "/admin/role-play",
+    label: "Role-Play",
+    description:
+      "Create and manage the preset practice scenarios available in the paid Role-Play feature. Publish only scenarios that are ready for learners; archive old scenarios instead of deleting them.",
+    example:
+      "Edit the Ordering Food scenario, review its Western Armenian opening message and AI instructions, then publish the updated scenario.",
   },
   {
     href: "/admin/corrections",
@@ -117,6 +126,7 @@ export function DashboardNav({
   admin?: boolean;
 }) {
   const pathname = usePathname();
+  const { profile } = useAuth();
 
   if (admin) {
     return (
@@ -124,7 +134,13 @@ export function DashboardNav({
         className="dashboard-nav admin-dashboard-nav"
         aria-label="Admin navigation"
       >
-        {ADMIN_ITEMS.map(
+        {ADMIN_ITEMS
+          .filter(
+            ({ href }) =>
+              href !== "/admin/role-play" ||
+              profile?.role === "admin",
+          )
+          .map(
           ({
             href,
             label,

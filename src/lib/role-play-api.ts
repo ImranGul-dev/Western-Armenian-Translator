@@ -20,16 +20,18 @@ export type RolePlaySessionStatus =
   | "completed"
   | "abandoned";
 
+export type RolePlayDifficulty =
+  | "beginner"
+  | "intermediate"
+  | "advanced";
+
 export interface RolePlayScenario {
   id: string;
   slug: string;
   title: string;
   description: string;
   category: string;
-  difficulty:
-    | "beginner"
-    | "intermediate"
-    | "advanced";
+  difficulty: RolePlayDifficulty;
   setting: string;
   userRole: string;
   aiRole: string;
@@ -37,6 +39,40 @@ export interface RolePlayScenario {
   openingMessage: string;
   sortOrder: number;
 }
+
+export interface RolePlayAdminScenario
+  extends RolePlayScenario {
+  instructions: string;
+  published: boolean;
+  archivedAt: string | null;
+  publishedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string | null;
+  updatedBy: string | null;
+}
+
+export interface RolePlayAdminScenarioInput {
+  slug: string;
+  title: string;
+  description: string;
+  category: string;
+  difficulty: RolePlayDifficulty;
+  setting: string;
+  userRole: string;
+  aiRole: string;
+  goal: string;
+  instructions: string;
+  openingMessage: string;
+  published: boolean;
+  sortOrder: number;
+}
+
+export type RolePlayAdminStateAction =
+  | "admin_publish"
+  | "admin_unpublish"
+  | "admin_archive"
+  | "admin_restore";
 
 export interface RolePlaySession {
   id: string;
@@ -105,6 +141,21 @@ export interface RolePlayEndResult {
   success: true;
   action: "end";
   session: RolePlaySession;
+}
+
+export interface RolePlayAdminListResult {
+  success: true;
+  action: "admin_list";
+  scenarios: RolePlayAdminScenario[];
+}
+
+export interface RolePlayAdminMutationResult {
+  success: true;
+  action:
+    | "admin_create"
+    | "admin_update"
+    | RolePlayAdminStateAction;
+  scenario: RolePlayAdminScenario;
 }
 
 function getFunctionUrl(): string {
@@ -323,4 +374,83 @@ export async function endRolePlaySession(
     accessToken,
     signal,
   );
+}
+
+export async function listAdminRolePlayScenarios(
+  accessToken: string,
+  signal?: AbortSignal,
+): Promise<RolePlayAdminScenario[]> {
+  const result =
+    await requestRolePlay<RolePlayAdminListResult>(
+      {
+        action:
+          "admin_list",
+      },
+      accessToken,
+      signal,
+    );
+
+  return result.scenarios;
+}
+
+export async function createAdminRolePlayScenario(
+  scenario: RolePlayAdminScenarioInput,
+  accessToken: string,
+  signal?: AbortSignal,
+): Promise<RolePlayAdminScenario> {
+  const result =
+    await requestRolePlay<RolePlayAdminMutationResult>(
+      {
+        action:
+          "admin_create",
+
+        scenario,
+      },
+      accessToken,
+      signal,
+    );
+
+  return result.scenario;
+}
+
+export async function updateAdminRolePlayScenario(
+  scenarioId: string,
+  scenario: RolePlayAdminScenarioInput,
+  accessToken: string,
+  signal?: AbortSignal,
+): Promise<RolePlayAdminScenario> {
+  const result =
+    await requestRolePlay<RolePlayAdminMutationResult>(
+      {
+        action:
+          "admin_update",
+
+        scenarioId,
+
+        scenario,
+      },
+      accessToken,
+      signal,
+    );
+
+  return result.scenario;
+}
+
+export async function changeAdminRolePlayScenarioState(
+  scenarioId: string,
+  action: RolePlayAdminStateAction,
+  accessToken: string,
+  signal?: AbortSignal,
+): Promise<RolePlayAdminScenario> {
+  const result =
+    await requestRolePlay<RolePlayAdminMutationResult>(
+      {
+        action,
+        scenarioId,
+      },
+      accessToken,
+      signal,
+    );
+
+  return result.scenario;
 }
