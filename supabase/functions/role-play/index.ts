@@ -2058,7 +2058,8 @@ ROLE-PLAY RULES
               speaker:
                 "assistant",
 
-              modality,
+              modality:
+                "text",
 
               content:
                 safeReply,
