@@ -2387,3 +2387,98 @@ html.dark .voice-speed-select {
     padding: 15px;
   }
 }
+/* === Role-Play voice controls === */
+
+.role-play-assistant-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding-top: 2px;
+}
+
+.role-play-assistant-actions .voice-listen-control {
+  max-width: 100%;
+}
+
+.role-play-voice-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.role-play-voice-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.role-play-voice-input > span:last-child {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.role-play-speech-language {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.role-play-speech-language select {
+  min-height: 36px;
+  padding: 0 30px 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.role-play-speech-language select:focus {
+  border-color: var(--accent);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.role-play-speech-language select:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+@media (max-width: 680px) {
+  .role-play-voice-tools {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .role-play-voice-input {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .role-play-speech-language {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .role-play-speech-language select {
+    width: 100%;
+  }
+
+  .role-play-assistant-actions {
+    align-items: flex-start;
+  }
+}

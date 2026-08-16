@@ -18,6 +18,14 @@ import {
 } from "@/components/SiteFrame";
 
 import {
+  SpeechToTextButton,
+} from "@/components/SpeechToTextButton";
+
+import {
+  VoiceListenButton,
+} from "@/components/VoiceListenButton";
+
+import {
   useAuth,
 } from "@/contexts/AuthContext";
 
@@ -70,10 +78,19 @@ function AssistantMessage({
             {transliteration}
           </div>
         )}
+
+      <div className="role-play-assistant-actions">
+        <VoiceListenButton
+          text={content}
+          language="hyw"
+          label="Listen"
+          compact
+          mode="natural"
+        />
+      </div>
     </div>
   );
 }
-
 
 export default function RolePlayPage() {
   const {
@@ -142,6 +159,20 @@ export default function RolePlayPage() {
     setDraft,
   ] =
     useState("");
+
+  const [
+    speechLanguage,
+    setSpeechLanguage,
+  ] =
+    useState<"hyw" | "en">(
+      "hyw",
+    );
+
+  const [
+    listening,
+    setListening,
+  ] =
+    useState(false);
 
   const [
     error,
@@ -366,20 +397,20 @@ export default function RolePlayPage() {
   }
 
 
-  async function submitMessage(
-    event: FormEvent<HTMLFormElement>,
+  async function sendMessage(
+    value: string,
+    modality: "text" | "voice",
   ) {
-    event.preventDefault();
-
-    const value =
-      draft.trim();
+    const message =
+      value.trim();
 
     if (
-      !value ||
+      !message ||
       !roleSession ||
       roleSession.status !== "active" ||
       !session?.access_token ||
-      sending
+      sending ||
+      ending
     ) {
       return;
     }
@@ -399,9 +430,9 @@ export default function RolePlayPage() {
       const result =
         await sendRolePlayMessage(
           roleSession.id,
-          value,
+          message,
           session.access_token,
-          "text",
+          modality,
           controller.signal,
         );
 
@@ -444,6 +475,37 @@ export default function RolePlayPage() {
     }
   }
 
+
+  function submitMessage(
+    event: FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault();
+
+    void sendMessage(
+      draft,
+      "text",
+    );
+  }
+
+
+  function handleSpeechTranscript(
+    value: string,
+    final: boolean,
+  ) {
+    setDraft(
+      value,
+    );
+
+    if (
+      final &&
+      value.trim()
+    ) {
+      void sendMessage(
+        value,
+        "voice",
+      );
+    }
+  }
 
   function handleComposerKeyDown(
     event: KeyboardEvent<HTMLTextAreaElement>,
@@ -617,12 +679,12 @@ export default function RolePlayPage() {
 
                       <p>
                         Pick a real-world setting and
-                        start a guided text conversation.
+                        start a guided text or voice conversation.
                       </p>
                     </div>
 
                     <span className="role-play-mode-badge">
-                      Text practice
+                      Text + voice practice
                     </span>
                   </div>
 
@@ -751,7 +813,7 @@ export default function RolePlayPage() {
                     <div>
                       <div className="role-play-conversation-meta">
                         <span className="role-play-mode-badge">
-                          Text practice
+                          Text + voice practice
                         </span>
 
                         <span
@@ -898,7 +960,8 @@ export default function RolePlayPage() {
                         }
                         disabled={
                           sending ||
-                          ending
+                          ending ||
+                          listening
                         }
                         placeholder="Reply in English, Western Armenian, or Latin Armenian..."
                         onChange={(
@@ -914,10 +977,79 @@ export default function RolePlayPage() {
                         }
                       />
 
+                      <div className="role-play-voice-tools">
+                        <div className="role-play-voice-input">
+                          <SpeechToTextButton
+                            language={
+                              speechLanguage
+                            }
+                            currentText={
+                              draft
+                            }
+                            maxCharacters={
+                              5000
+                            }
+                            disabled={
+                              sending ||
+                              ending
+                            }
+                            onTranscript={
+                              handleSpeechTranscript
+                            }
+                            onListeningChange={
+                              setListening
+                            }
+                          />
+
+                          <span>
+                            {listening
+                              ? "Speak now, then press Stop."
+                              : "Use the microphone to reply by voice."}
+                          </span>
+                        </div>
+
+                        <label className="role-play-speech-language">
+                          <span>
+                            Speech language
+                          </span>
+
+                          <select
+                            value={
+                              speechLanguage
+                            }
+                            disabled={
+                              sending ||
+                              ending ||
+                              listening
+                            }
+                            onChange={(
+                              event,
+                            ) =>
+                              setSpeechLanguage(
+                                event.target
+                                  .value ===
+                                  "en"
+                                  ? "en"
+                                  : "hyw",
+                              )
+                            }
+                          >
+                            <option value="hyw">
+                              Western Armenian
+                            </option>
+
+                            <option value="en">
+                              English
+                            </option>
+                          </select>
+                        </label>
+                      </div>
+
                       <div className="role-play-composer-footer">
                         <span>
-                          Press Enter to send.
-                          Shift + Enter adds a new line.
+                          Type and press Enter,
+                          or use Speak and press
+                          Stop when you finish.
                         </span>
 
                         <button
@@ -926,6 +1058,7 @@ export default function RolePlayPage() {
                           disabled={
                             sending ||
                             ending ||
+                            listening ||
                             !draft.trim()
                           }
                         >
@@ -934,8 +1067,7 @@ export default function RolePlayPage() {
                             : "Send"}
                         </button>
                       </div>
-                    </form>
-                  ) : (
+                    </form>                  ) : (
                     <div className="role-play-complete-panel">
                       <div>
                         <strong>
