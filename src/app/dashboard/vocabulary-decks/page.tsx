@@ -1253,7 +1253,7 @@ export default function VocabularyDecksPage() {
                       <textarea
                         value={editDescription}
                         maxLength={500}
-                        rows={3}
+                        rows={2}
                         placeholder="Optional"
                         disabled={
                           Boolean(

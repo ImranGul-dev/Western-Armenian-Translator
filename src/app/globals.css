@@ -3615,7 +3615,7 @@ html.dark .voice-speed-select {
     minmax(240px, 1.3fr)
     auto;
   gap: 12px;
-  align-items: end;
+  align-items: start;
   padding: 14px;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -3623,7 +3623,11 @@ html.dark .voice-speed-select {
 }
 
 .vocabulary-deck-edit-form textarea {
-  min-height: 76px;
+  min-height: 64px;
+}
+
+.vocabulary-deck-edit-form .primary-button {
+  align-self: end;
 }
 
 .vocabulary-deck-phrase-heading {
