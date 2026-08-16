@@ -39,7 +39,14 @@ type RolePlayAction =
   | "list"
   | "start"
   | "message"
-  | "end";
+  | "end"
+  | "admin_list"
+  | "admin_create"
+  | "admin_update"
+  | "admin_publish"
+  | "admin_unpublish"
+  | "admin_archive"
+  | "admin_restore";
 
 type InteractionMode =
   | "text"
@@ -54,6 +61,8 @@ type TurnModality =
 interface RolePlayRequest {
   action?: unknown;
   scenarioSlug?: unknown;
+  scenarioId?: unknown;
+  scenario?: unknown;
   sessionId?: unknown;
   message?: unknown;
   modality?: unknown;
@@ -79,6 +88,35 @@ interface ScenarioRow {
   archived_at: string | null;
 }
 
+
+interface AdminScenarioRow
+  extends ScenarioRow {
+  created_by: string | null;
+  updated_by: string | null;
+  published_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+
+interface AdminScenarioInput {
+  slug: string;
+  title: string;
+  description: string;
+  category: string;
+  difficulty:
+    | "beginner"
+    | "intermediate"
+    | "advanced";
+  setting: string;
+  userRole: string;
+  aiRole: string;
+  goal: string;
+  instructions: string;
+  openingMessage: string;
+  published: boolean;
+  sortOrder: number;
+}
 
 interface SessionRow {
   id: string;
@@ -142,6 +180,15 @@ const SCENARIO_FIELDS = [
 ].join(",");
 
 
+const ADMIN_SCENARIO_FIELDS = [
+  SCENARIO_FIELDS,
+  "created_by",
+  "updated_by",
+  "published_at",
+  "created_at",
+  "updated_at",
+].join(",");
+
 const SESSION_FIELDS = [
   "id",
   "user_id",
@@ -203,7 +250,14 @@ function parseAction(
     value === "list" ||
     value === "start" ||
     value === "message" ||
-    value === "end"
+    value === "end" ||
+    value === "admin_list" ||
+    value === "admin_create" ||
+    value === "admin_update" ||
+    value === "admin_publish" ||
+    value === "admin_unpublish" ||
+    value === "admin_archive" ||
+    value === "admin_restore"
   ) {
     return value;
   }
@@ -268,6 +322,428 @@ function roleFromProfile(
   return "user";
 }
 
+
+function adminScenarioResponse(
+  row: AdminScenarioRow,
+) {
+  return {
+    id:
+      row.id,
+
+    slug:
+      row.slug,
+
+    title:
+      row.title,
+
+    description:
+      row.description,
+
+    category:
+      row.category,
+
+    difficulty:
+      row.difficulty,
+
+    setting:
+      row.setting,
+
+    userRole:
+      row.user_role,
+
+    aiRole:
+      row.ai_role,
+
+    goal:
+      row.goal,
+
+    instructions:
+      row.instructions,
+
+    openingMessage:
+      row.opening_message,
+
+    published:
+      row.published,
+
+    sortOrder:
+      row.sort_order,
+
+    archivedAt:
+      row.archived_at,
+
+    publishedAt:
+      row.published_at,
+
+    createdAt:
+      row.created_at,
+
+    updatedAt:
+      row.updated_at,
+
+    createdBy:
+      row.created_by,
+
+    updatedBy:
+      row.updated_by,
+  };
+}
+
+
+function scenarioInputText(
+  record: Record<string, unknown>,
+  key: string,
+  maxCharacters: number,
+): string | null {
+  const value =
+    typeof record[key] ===
+      "string"
+      ? (
+          record[key] as string
+        ).trim()
+      : "";
+
+  if (
+    Array.from(value).length >
+    maxCharacters
+  ) {
+    return null;
+  }
+
+  return value;
+}
+
+
+function normalizeAdminScenarioInput(
+  value: unknown,
+):
+  | {
+      ok: true;
+      value: AdminScenarioInput;
+    }
+  | {
+      ok: false;
+      error: string;
+    } {
+  if (
+    !value ||
+    typeof value !== "object" ||
+    Array.isArray(value)
+  ) {
+    return {
+      ok:
+        false,
+
+      error:
+        "Scenario details are required.",
+    };
+  }
+
+  const record =
+    value as Record<
+      string,
+      unknown
+    >;
+
+  const slug =
+    scenarioInputText(
+      record,
+      "slug",
+      80,
+    );
+
+  if (
+    !slug ||
+    !/^[a-z0-9]+(?:-[a-z0-9]+)*$/u
+      .test(slug)
+  ) {
+    return {
+      ok:
+        false,
+
+      error:
+        "Slug must use lowercase letters, numbers and single hyphens only.",
+    };
+  }
+
+  const title =
+    scenarioInputText(
+      record,
+      "title",
+      120,
+    );
+
+  if (!title) {
+    return {
+      ok:
+        false,
+
+      error:
+        "Scenario title is required and must be 120 characters or fewer.",
+    };
+  }
+
+  const description =
+    scenarioInputText(
+      record,
+      "description",
+      500,
+    );
+
+  if (description === null) {
+    return {
+      ok:
+        false,
+
+      error:
+        "Scenario description must be 500 characters or fewer.",
+    };
+  }
+
+  const categoryValue =
+    scenarioInputText(
+      record,
+      "category",
+      60,
+    );
+
+  if (categoryValue === null) {
+    return {
+      ok:
+        false,
+
+      error:
+        "Scenario category must be 60 characters or fewer.",
+    };
+  }
+
+  const category =
+    categoryValue ||
+    "everyday";
+
+  const difficulty =
+    record.difficulty;
+
+  if (
+    difficulty !==
+      "beginner" &&
+    difficulty !==
+      "intermediate" &&
+    difficulty !==
+      "advanced"
+  ) {
+    return {
+      ok:
+        false,
+
+      error:
+        "Difficulty must be beginner, intermediate or advanced.",
+    };
+  }
+
+  const setting =
+    scenarioInputText(
+      record,
+      "setting",
+      500,
+    );
+
+  if (setting === null) {
+    return {
+      ok:
+        false,
+
+      error:
+        "Scenario setting must be 500 characters or fewer.",
+    };
+  }
+
+  const userRole =
+    scenarioInputText(
+      record,
+      "userRole",
+      300,
+    );
+
+  if (userRole === null) {
+    return {
+      ok:
+        false,
+
+      error:
+        "Learner role must be 300 characters or fewer.",
+    };
+  }
+
+  const aiRole =
+    scenarioInputText(
+      record,
+      "aiRole",
+      300,
+    );
+
+  if (aiRole === null) {
+    return {
+      ok:
+        false,
+
+      error:
+        "AI role must be 300 characters or fewer.",
+    };
+  }
+
+  const goal =
+    scenarioInputText(
+      record,
+      "goal",
+      1000,
+    );
+
+  if (goal === null) {
+    return {
+      ok:
+        false,
+
+      error:
+        "Scenario goal must be 1,000 characters or fewer.",
+    };
+  }
+
+  const instructions =
+    scenarioInputText(
+      record,
+      "instructions",
+      5000,
+    );
+
+  if (instructions === null) {
+    return {
+      ok:
+        false,
+
+      error:
+        "AI instructions must be 5,000 characters or fewer.",
+    };
+  }
+
+  const openingMessage =
+    scenarioInputText(
+      record,
+      "openingMessage",
+      1000,
+    );
+
+  if (!openingMessage) {
+    return {
+      ok:
+        false,
+
+      error:
+        "Opening message is required and must be 1,000 characters or fewer.",
+    };
+  }
+
+  const rawSortOrder =
+    record.sortOrder;
+
+  const sortOrder =
+    typeof rawSortOrder ===
+      "number"
+      ? rawSortOrder
+      : typeof rawSortOrder ===
+          "string" &&
+        rawSortOrder.trim()
+        ? Number(
+            rawSortOrder,
+          )
+        : 0;
+
+  if (
+    !Number.isInteger(
+      sortOrder,
+    ) ||
+    sortOrder < 0
+  ) {
+    return {
+      ok:
+        false,
+
+      error:
+        "Sort order must be a whole number of zero or greater.",
+    };
+  }
+
+  return {
+    ok:
+      true,
+
+    value: {
+      slug,
+      title,
+      description,
+      category,
+      difficulty,
+      setting,
+      userRole,
+      aiRole,
+      goal,
+      instructions,
+      openingMessage,
+
+      published:
+        record.published ===
+        true,
+
+      sortOrder,
+    },
+  };
+}
+
+
+function adminScenarioDatabaseValues(
+  input: AdminScenarioInput,
+) {
+  return {
+    slug:
+      input.slug,
+
+    title:
+      input.title,
+
+    description:
+      input.description,
+
+    category:
+      input.category,
+
+    difficulty:
+      input.difficulty,
+
+    setting:
+      input.setting,
+
+    user_role:
+      input.userRole,
+
+    ai_role:
+      input.aiRole,
+
+    goal:
+      input.goal,
+
+    instructions:
+      input.instructions,
+
+    opening_message:
+      input.openingMessage,
+
+    published:
+      input.published,
+
+    sort_order:
+      input.sortOrder,
+  };
+}
 
 function reasoningForModel(
   model: string,
@@ -1110,6 +1586,680 @@ Deno.serve(
       );
     }
 
+
+    /*
+     * ADMIN SCENARIO CMS
+     *
+     * Scenario rows remain inaccessible directly
+     * from browser clients. All CMS reads and
+     * writes go through this service-role function
+     * after verifying an administrator account.
+     */
+    const isAdminAction =
+      action ===
+        "admin_list" ||
+      action ===
+        "admin_create" ||
+      action ===
+        "admin_update" ||
+      action ===
+        "admin_publish" ||
+      action ===
+        "admin_unpublish" ||
+      action ===
+        "admin_archive" ||
+      action ===
+        "admin_restore";
+
+    if (
+      isAdminAction &&
+      role !== "admin"
+    ) {
+      return json(
+        {
+          success:
+            false,
+
+          error:
+            "Administrator access is required to manage Role-Play scenarios.",
+
+          code:
+            "admin_required",
+        },
+        403,
+        cors,
+      );
+    }
+
+
+    if (
+      action ===
+      "admin_list"
+    ) {
+      const result =
+        await admin
+          .from(
+            "role_play_scenarios",
+          )
+          .select(
+            ADMIN_SCENARIO_FIELDS,
+          )
+          .order(
+            "sort_order",
+            {
+              ascending:
+                true,
+            },
+          )
+          .order(
+            "title",
+            {
+              ascending:
+                true,
+            },
+          );
+
+      if (result.error) {
+        console.error(
+          "Admin Role-Play scenario list failed",
+          result.error,
+        );
+
+        return json(
+          {
+            success:
+              false,
+
+            error:
+              "Role-Play scenarios could not be loaded for administration.",
+
+            code:
+              "admin_scenario_list_failed",
+          },
+          500,
+          cors,
+        );
+      }
+
+      return json(
+        {
+          success:
+            true,
+
+          action:
+            "admin_list",
+
+          scenarios:
+            (
+              result.data ??
+              []
+            ).map(
+              (row) =>
+                adminScenarioResponse(
+                  row as
+                    AdminScenarioRow,
+                ),
+            ),
+        },
+        200,
+        cors,
+      );
+    }
+
+
+    if (
+      action ===
+      "admin_create"
+    ) {
+      const normalized =
+        normalizeAdminScenarioInput(
+          payload.scenario,
+        );
+
+      if (!normalized.ok) {
+        return json(
+          {
+            success:
+              false,
+
+            error:
+              normalized.error,
+
+            code:
+              "invalid_scenario",
+          },
+          400,
+          cors,
+        );
+      }
+
+      const now =
+        new Date()
+          .toISOString();
+
+      const result =
+        await admin
+          .from(
+            "role_play_scenarios",
+          )
+          .insert({
+            ...adminScenarioDatabaseValues(
+              normalized.value,
+            ),
+
+            created_by:
+              user.id,
+
+            updated_by:
+              user.id,
+
+            published_at:
+              normalized.value
+                .published
+                ? now
+                : null,
+
+            archived_at:
+              null,
+          })
+          .select(
+            ADMIN_SCENARIO_FIELDS,
+          )
+          .single();
+
+      if (
+        result.error ||
+        !result.data
+      ) {
+        console.error(
+          "Admin Role-Play scenario create failed",
+          result.error,
+        );
+
+        return json(
+          {
+            success:
+              false,
+
+            error:
+              result.error?.code ===
+                "23505"
+                ? "A Role-Play scenario with that slug already exists."
+                : "The Role-Play scenario could not be created.",
+
+            code:
+              result.error?.code ===
+                "23505"
+                ? "scenario_slug_exists"
+                : "admin_scenario_create_failed",
+          },
+          result.error?.code ===
+            "23505"
+            ? 409
+            : 500,
+          cors,
+        );
+      }
+
+      return json(
+        {
+          success:
+            true,
+
+          action:
+            "admin_create",
+
+          scenario:
+            adminScenarioResponse(
+              result.data as
+                AdminScenarioRow,
+            ),
+        },
+        201,
+        cors,
+      );
+    }
+
+
+    const adminScenarioId =
+      typeof payload
+        .scenarioId ===
+        "string"
+        ? payload
+            .scenarioId
+            .trim()
+        : "";
+
+    if (
+      isAdminAction &&
+      action !==
+        "admin_list" &&
+      action !==
+        "admin_create" &&
+      !isUuid(
+        adminScenarioId,
+      )
+    ) {
+      return json(
+        {
+          success:
+            false,
+
+          error:
+            "A valid Role-Play scenario ID is required.",
+
+          code:
+            "invalid_scenario_id",
+        },
+        400,
+        cors,
+      );
+    }
+
+
+    if (
+      action ===
+      "admin_update"
+    ) {
+      const normalized =
+        normalizeAdminScenarioInput(
+          payload.scenario,
+        );
+
+      if (!normalized.ok) {
+        return json(
+          {
+            success:
+              false,
+
+            error:
+              normalized.error,
+
+            code:
+              "invalid_scenario",
+          },
+          400,
+          cors,
+        );
+      }
+
+      const currentResult =
+        await admin
+          .from(
+            "role_play_scenarios",
+          )
+          .select(
+            "id,published,published_at,archived_at",
+          )
+          .eq(
+            "id",
+            adminScenarioId,
+          )
+          .maybeSingle();
+
+      if (currentResult.error) {
+        console.error(
+          "Admin Role-Play scenario lookup failed",
+          currentResult.error,
+        );
+
+        return json(
+          {
+            success:
+              false,
+
+            error:
+              "The Role-Play scenario could not be loaded.",
+
+            code:
+              "admin_scenario_lookup_failed",
+          },
+          500,
+          cors,
+        );
+      }
+
+      if (!currentResult.data) {
+        return json(
+          {
+            success:
+              false,
+
+            error:
+              "The Role-Play scenario was not found.",
+
+            code:
+              "scenario_not_found",
+          },
+          404,
+          cors,
+        );
+      }
+
+      const now =
+        new Date()
+          .toISOString();
+
+      const archived =
+        Boolean(
+          currentResult
+            .data
+            .archived_at,
+        );
+
+      const published =
+        archived
+          ? false
+          : normalized
+              .value
+              .published;
+
+      const publishedAt =
+        published
+          ? currentResult
+              .data
+              .published
+            ? currentResult
+                .data
+                .published_at ||
+              now
+            : now
+          : null;
+
+      const result =
+        await admin
+          .from(
+            "role_play_scenarios",
+          )
+          .update({
+            ...adminScenarioDatabaseValues(
+              {
+                ...normalized.value,
+                published,
+              },
+            ),
+
+            published_at:
+              publishedAt,
+
+            updated_by:
+              user.id,
+          })
+          .eq(
+            "id",
+            adminScenarioId,
+          )
+          .select(
+            ADMIN_SCENARIO_FIELDS,
+          )
+          .single();
+
+      if (
+        result.error ||
+        !result.data
+      ) {
+        console.error(
+          "Admin Role-Play scenario update failed",
+          result.error,
+        );
+
+        return json(
+          {
+            success:
+              false,
+
+            error:
+              result.error?.code ===
+                "23505"
+                ? "A Role-Play scenario with that slug already exists."
+                : "The Role-Play scenario could not be updated.",
+
+            code:
+              result.error?.code ===
+                "23505"
+                ? "scenario_slug_exists"
+                : "admin_scenario_update_failed",
+          },
+          result.error?.code ===
+            "23505"
+            ? 409
+            : 500,
+          cors,
+        );
+      }
+
+      return json(
+        {
+          success:
+            true,
+
+          action:
+            "admin_update",
+
+          scenario:
+            adminScenarioResponse(
+              result.data as
+                AdminScenarioRow,
+            ),
+        },
+        200,
+        cors,
+      );
+    }
+
+
+    if (
+      action ===
+        "admin_publish" ||
+      action ===
+        "admin_unpublish" ||
+      action ===
+        "admin_archive" ||
+      action ===
+        "admin_restore"
+    ) {
+      const currentResult =
+        await admin
+          .from(
+            "role_play_scenarios",
+          )
+          .select(
+            ADMIN_SCENARIO_FIELDS,
+          )
+          .eq(
+            "id",
+            adminScenarioId,
+          )
+          .maybeSingle();
+
+      if (currentResult.error) {
+        console.error(
+          "Admin Role-Play state lookup failed",
+          currentResult.error,
+        );
+
+        return json(
+          {
+            success:
+              false,
+
+            error:
+              "The Role-Play scenario could not be loaded.",
+
+            code:
+              "admin_scenario_lookup_failed",
+          },
+          500,
+          cors,
+        );
+      }
+
+      if (!currentResult.data) {
+        return json(
+          {
+            success:
+              false,
+
+            error:
+              "The Role-Play scenario was not found.",
+
+            code:
+              "scenario_not_found",
+          },
+          404,
+          cors,
+        );
+      }
+
+      const current =
+        currentResult.data as
+          AdminScenarioRow;
+
+      if (
+        action ===
+          "admin_publish" &&
+        current.archived_at
+      ) {
+        return json(
+          {
+            success:
+              false,
+
+            error:
+              "Restore this scenario before publishing it.",
+
+            code:
+              "scenario_archived",
+          },
+          409,
+          cors,
+        );
+      }
+
+      const now =
+        new Date()
+          .toISOString();
+
+      const changes:
+        Record<
+          string,
+          unknown
+        > = {
+          updated_by:
+            user.id,
+        };
+
+      if (
+        action ===
+        "admin_publish"
+      ) {
+        changes.published =
+          true;
+
+        changes.published_at =
+          current.published_at ||
+          now;
+      }
+
+      if (
+        action ===
+        "admin_unpublish"
+      ) {
+        changes.published =
+          false;
+
+        changes.published_at =
+          null;
+      }
+
+      if (
+        action ===
+        "admin_archive"
+      ) {
+        changes.published =
+          false;
+
+        changes.published_at =
+          null;
+
+        changes.archived_at =
+          current.archived_at ||
+          now;
+      }
+
+      if (
+        action ===
+        "admin_restore"
+      ) {
+        changes.archived_at =
+          null;
+
+        changes.published =
+          false;
+
+        changes.published_at =
+          null;
+      }
+
+      const result =
+        await admin
+          .from(
+            "role_play_scenarios",
+          )
+          .update(
+            changes,
+          )
+          .eq(
+            "id",
+            adminScenarioId,
+          )
+          .select(
+            ADMIN_SCENARIO_FIELDS,
+          )
+          .single();
+
+      if (
+        result.error ||
+        !result.data
+      ) {
+        console.error(
+          "Admin Role-Play state update failed",
+          result.error,
+        );
+
+        return json(
+          {
+            success:
+              false,
+
+            error:
+              "The Role-Play scenario status could not be changed.",
+
+            code:
+              "admin_scenario_state_failed",
+          },
+          500,
+          cors,
+        );
+      }
+
+      return json(
+        {
+          success:
+            true,
+
+          action,
+
+          scenario:
+            adminScenarioResponse(
+              result.data as
+                AdminScenarioRow,
+            ),
+        },
+        200,
+        cors,
+      );
+    }
 
     /*
      * LIST
