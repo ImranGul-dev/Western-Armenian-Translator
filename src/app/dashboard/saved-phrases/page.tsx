@@ -40,10 +40,19 @@ import {
 } from "@/lib/saved-phrases-api";
 
 import {
+  addSavedPhraseToVocabularyDeck,
+  listVocabularyDecks,
+  type VocabularyDeck,
+} from "@/lib/vocabulary-decks-api";
+
+import {
   transliterateWesternArmenian,
 } from "@/lib/western-armenian-transliteration";
 
 const MAX_LOADED_PHRASES =
+  100;
+
+const MAX_LOADED_DECKS =
   100;
 
 function formatDate(
@@ -179,6 +188,47 @@ export default function SavedPhrasesPage() {
     useState<string | null>(
       null,
     );
+
+  const [
+    message,
+    setMessage,
+  ] =
+    useState("");
+
+  const [
+    deckPickerItem,
+    setDeckPickerItem,
+  ] =
+    useState<SavedPhraseItem | null>(
+      null,
+    );
+
+  const [
+    deckOptions,
+    setDeckOptions,
+  ] =
+    useState<VocabularyDeck[]>(
+      [],
+    );
+
+  const [
+    selectedDeckId,
+    setSelectedDeckId,
+  ] =
+    useState("");
+
+  const [
+    deckPickerLoading,
+    setDeckPickerLoading,
+  ] =
+    useState(false);
+
+  const [
+    deckPickerError,
+    setDeckPickerError,
+  ] =
+    useState("");
+
 
   const hasAccess =
     hasPaidFeatureAccess(
@@ -527,6 +577,145 @@ export default function SavedPhrasesPage() {
     router.push("/");
   }
 
+
+  function closeDeckPicker() {
+    setDeckPickerItem(
+      null,
+    );
+
+    setDeckOptions([]);
+    setSelectedDeckId("");
+    setDeckPickerError("");
+    setDeckPickerLoading(
+      false,
+    );
+  }
+
+
+  async function openDeckPicker(
+    item: SavedPhraseItem,
+  ) {
+    const accessToken =
+      session?.access_token;
+
+    if (
+      !accessToken ||
+      busyId ||
+      deckPickerLoading
+    ) {
+      return;
+    }
+
+    setDeckPickerItem(
+      item,
+    );
+
+    setDeckOptions([]);
+    setSelectedDeckId("");
+
+    setDeckPickerError("");
+    setError("");
+    setMessage("");
+
+    setDeckPickerLoading(
+      true,
+    );
+
+    try {
+      const result =
+        await listVocabularyDecks(
+          accessToken,
+          {
+            limit:
+              MAX_LOADED_DECKS,
+
+            offset:
+              0,
+          },
+        );
+
+      setDeckOptions(
+        result.items,
+      );
+
+      setSelectedDeckId(
+        result.items[0]?.id ??
+          "",
+      );
+    } catch (cause) {
+      setDeckPickerError(
+        cause instanceof Error
+          ? cause.message
+          : "Vocabulary Decks could not be loaded.",
+      );
+    } finally {
+      setDeckPickerLoading(
+        false,
+      );
+    }
+  }
+
+
+  async function addToSelectedDeck() {
+    const accessToken =
+      session?.access_token;
+
+    const item =
+      deckPickerItem;
+
+    const deck =
+      deckOptions.find(
+        (option) =>
+          option.id ===
+          selectedDeckId,
+      );
+
+    if (
+      !accessToken ||
+      !item ||
+      !deck ||
+      busyId
+    ) {
+      return;
+    }
+
+    setBusyId(
+      item.id,
+    );
+
+    setDeckPickerError("");
+    setError("");
+    setMessage("");
+
+    try {
+      const result =
+        await addSavedPhraseToVocabularyDeck(
+          accessToken,
+          deck.id,
+          item.id,
+        );
+
+      closeDeckPicker();
+
+      setMessage(
+        result.created
+          ? `Added to "${deck.name}".`
+          : `This phrase is already in "${deck.name}".`,
+      );
+    } catch (cause) {
+      setDeckPickerError(
+        cause instanceof Error
+          ? cause.message
+          : "The phrase could not be added to this Vocabulary Deck.",
+      );
+    } finally {
+      setBusyId(
+        null,
+      );
+    }
+  }
+
+
   if (
     authLoading
   ) {
@@ -691,6 +880,15 @@ export default function SavedPhrasesPage() {
               role="alert"
             >
               {error}
+            </div>
+          ) : null}
+
+          {message ? (
+            <div
+              className="form-message success"
+              role="status"
+            >
+              {message}
             </div>
           ) : null}
 
@@ -878,6 +1076,23 @@ export default function SavedPhrasesPage() {
 
                         <button
                           type="button"
+                          className="saved-phrase-deck-action"
+                          onClick={() =>
+                            void openDeckPicker(
+                              item,
+                            )
+                          }
+                          disabled={
+                            Boolean(
+                              busyId,
+                            )
+                          }
+                        >
+                          Add to deck
+                        </button>
+
+                        <button
+                          type="button"
                           className="saved-phrase-delete-action"
                           onClick={() =>
                             void removePhrase(
@@ -904,6 +1119,205 @@ export default function SavedPhrasesPage() {
             </div>
           )}
         </div>
+
+        {deckPickerItem ? (
+          <div
+            className="upgrade-modal-backdrop saved-phrase-deck-modal-backdrop"
+            role="presentation"
+            onMouseDown={(event) => {
+              if (
+                event.target ===
+                  event.currentTarget &&
+                !busyId
+              ) {
+                closeDeckPicker();
+              }
+            }}
+          >
+            <section
+              className="upgrade-modal saved-phrase-deck-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="saved-phrase-deck-modal-title"
+            >
+              <button
+                type="button"
+                className="upgrade-modal-close"
+                aria-label="Close Add to Deck"
+                disabled={
+                  Boolean(
+                    busyId,
+                  )
+                }
+                onClick={
+                  closeDeckPicker
+                }
+              >
+                {"\u00d7"}
+              </button>
+
+              <p className="eyebrow">
+                Vocabulary Decks
+              </p>
+
+              <h2 id="saved-phrase-deck-modal-title">
+                Add to deck
+              </h2>
+
+              <p className="upgrade-modal-copy">
+                Choose the Vocabulary Deck where you want to practise this Saved Phrase.
+              </p>
+
+              {deckPickerLoading ? (
+                <div className="page-state saved-phrase-deck-loading">
+                  Loading your decks...
+                </div>
+              ) : deckOptions.length ? (
+                <div className="saved-phrase-deck-picker">
+                  <label>
+                    <span>
+                      Vocabulary Deck
+                    </span>
+
+                    <select
+                      value={
+                        selectedDeckId
+                      }
+                      disabled={
+                        Boolean(
+                          busyId,
+                        )
+                      }
+                      onChange={(event) =>
+                        setSelectedDeckId(
+                          event.target.value,
+                        )
+                      }
+                    >
+                      {deckOptions.map(
+                        (deck) => (
+                          <option
+                            key={
+                              deck.id
+                            }
+                            value={
+                              deck.id
+                            }
+                          >
+                            {deck.name} ({deck.phraseCount}{" "}
+                            {deck.phraseCount === 1
+                              ? "phrase"
+                              : "phrases"})
+                          </option>
+                        ),
+                      )}
+                    </select>
+                  </label>
+
+                  {deckPickerError ? (
+                    <div
+                      className="form-message error saved-phrase-deck-error"
+                      role="alert"
+                    >
+                      {deckPickerError}
+                    </div>
+                  ) : null}
+
+                  <div className="saved-phrase-deck-modal-actions">
+                    <button
+                      type="button"
+                      className="upgrade-modal-secondary"
+                      disabled={
+                        Boolean(
+                          busyId,
+                        )
+                      }
+                      onClick={
+                        closeDeckPicker
+                      }
+                    >
+                      Cancel
+                    </button>
+
+                    <button
+                      type="button"
+                      className="primary-button"
+                      disabled={
+                        !selectedDeckId ||
+                        Boolean(
+                          busyId,
+                        )
+                      }
+                      onClick={() =>
+                        void addToSelectedDeck()
+                      }
+                    >
+                      {busyId ===
+                      deckPickerItem.id
+                        ? "Adding..."
+                        : "Add to deck"}
+                    </button>
+                  </div>
+                </div>
+              ) : deckPickerError ? (
+                <div className="saved-phrase-deck-empty">
+                  <p>
+                    {deckPickerError}
+                  </p>
+
+                  <div className="saved-phrase-deck-modal-actions">
+                    <button
+                      type="button"
+                      className="upgrade-modal-secondary"
+                      onClick={
+                        closeDeckPicker
+                      }
+                    >
+                      Cancel
+                    </button>
+
+                    <button
+                      type="button"
+                      className="primary-button"
+                      onClick={() =>
+                        void openDeckPicker(
+                          deckPickerItem,
+                        )
+                      }
+                    >
+                      Try again
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="saved-phrase-deck-empty">
+                  <p>
+                    You do not have any Vocabulary Decks yet. Create a deck first, then return here to add this phrase.
+                  </p>
+
+                  <div className="saved-phrase-deck-modal-actions">
+                    <button
+                      type="button"
+                      className="upgrade-modal-secondary"
+                      onClick={
+                        closeDeckPicker
+                      }
+                    >
+                      Cancel
+                    </button>
+
+                    <Link
+                      href="/dashboard/vocabulary-decks"
+                      className="primary-button inline-button"
+                    >
+                      Create a deck
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </section>
+          </div>
+        ) : null}
       </DashboardShell>
     </ProtectedRoute>
   );
