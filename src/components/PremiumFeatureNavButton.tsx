@@ -1,12 +1,16 @@
 "use client";
 
 import Link from "next/link";
+
 import {
   useEffect,
   useState,
 } from "react";
 
-import { useAuth } from "@/contexts/AuthContext";
+import {
+  useAuth,
+} from "@/contexts/AuthContext";
+
 import {
   hasPaidFeatureAccess,
   type PaidFeature,
@@ -19,6 +23,59 @@ interface PremiumFeatureNavButtonProps {
   href?: string;
   className?: string;
 }
+
+const FEATURE_BULLETS:
+  Partial<
+    Record<
+      PaidFeature,
+      readonly string[]
+    >
+  > = {
+  thesaurus: [
+    "Western Armenian synonyms and antonyms",
+    "Natural alternative wording and phrasing",
+  ],
+
+  role_play: [
+    "Voice and text conversation practice",
+    "Real-world Western Armenian scenarios",
+  ],
+
+  word_breakdown: [
+    "Word-by-word contextual meanings",
+    "Base forms and concise grammar explanations",
+  ],
+
+  audio: [
+    "Natural Western Armenian audio playback",
+    "Listening support for translated text",
+  ],
+
+  pronunciation: [
+    "Western Armenian pronunciation support",
+    "Slower playback for language practice",
+  ],
+
+  saved_phrases: [
+    "Save useful Western Armenian phrases",
+    "Keep learning material organised",
+  ],
+
+  vocabulary_decks: [
+    "Build personal vocabulary collections",
+    "Organise words and phrases for practice",
+  ],
+
+  flashcards: [
+    "Practise vocabulary with flashcards",
+    "Review saved learning material",
+  ],
+
+  practice_analytics: [
+    "Review language-practice activity",
+    "Track learning progress over time",
+  ],
+};
 
 export function PremiumFeatureNavButton({
   feature,
@@ -37,7 +94,8 @@ export function PremiumFeatureNavButton({
   const [
     open,
     setOpen,
-  ] = useState(false);
+  ] =
+    useState(false);
 
   const hasFeatureAccess =
     hasPaidFeatureAccess(
@@ -57,8 +115,13 @@ export function PremiumFeatureNavButton({
   const locked =
     !hasFeatureAccess;
 
-  const isRolePlay =
-    label === "Role-Play";
+  const featureBullets =
+    FEATURE_BULLETS[
+      feature
+    ] ?? [
+      "Premium Western Armenian learning tools",
+      "Expanded language-learning functionality",
+    ];
 
   const controlClassName =
     className ??
@@ -73,7 +136,8 @@ export function PremiumFeatureNavButton({
       event: KeyboardEvent,
     ) => {
       if (
-        event.key === "Escape"
+        event.key ===
+        "Escape"
       ) {
         setOpen(false);
       }
@@ -124,7 +188,7 @@ export function PremiumFeatureNavButton({
           {label}
         </span>
 
-        {locked && (
+        {locked ? (
           <span
             className="premium-nav-lock"
             aria-label="Paid feature"
@@ -132,10 +196,10 @@ export function PremiumFeatureNavButton({
           >
             {"\uD83D\uDD12"}
           </span>
-        )}
+        ) : null}
       </button>
 
-      {open && (
+      {open ? (
         <div
           className="upgrade-modal-backdrop"
           role="presentation"
@@ -188,26 +252,12 @@ export function PremiumFeatureNavButton({
                     Available to paid users
                   </li>
 
-                  {isRolePlay ? (
-                    <>
-                      <li>
-                        Voice and text conversation practice
+                  {featureBullets.map(
+                    (item) => (
+                      <li key={item}>
+                        {item}
                       </li>
-
-                      <li>
-                        Real-world Western Armenian scenarios
-                      </li>
-                    </>
-                  ) : (
-                    <>
-                      <li>
-                        Western Armenian synonyms, antonyms and alternative wording
-                      </li>
-
-                      <li>
-                        Alternative ways to express words and phrases
-                      </li>
-                    </>
+                    ),
                   )}
 
                   <li>
@@ -289,26 +339,12 @@ export function PremiumFeatureNavButton({
                     Included for paid users
                   </li>
 
-                  {isRolePlay ? (
-                    <>
-                      <li>
-                        Voice and text conversation practice
+                  {featureBullets.map(
+                    (item) => (
+                      <li key={item}>
+                        {item}
                       </li>
-
-                      <li>
-                        Real-world Western Armenian scenarios
-                      </li>
-                    </>
-                  ) : (
-                    <>
-                      <li>
-                        Synonyms and antonyms
-                      </li>
-
-                      <li>
-                        Alternative Western Armenian wording and phrasing
-                      </li>
-                    </>
+                    ),
                   )}
                 </ul>
 
@@ -331,7 +367,7 @@ export function PremiumFeatureNavButton({
             )}
           </section>
         </div>
-      )}
+      ) : null}
     </>
   );
 }

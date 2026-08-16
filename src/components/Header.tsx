@@ -138,6 +138,14 @@ export function Header() {
             )}
 
             <PremiumFeatureNavButton
+              feature="word_breakdown"
+              label="Word Breakdown"
+              description="Understand Western Armenian word-by-word meanings, base forms and grammar."
+              href="/word-breakdown"
+              className={`${navClass("/word-breakdown")} premium-feature-nav-link`}
+            />
+
+            <PremiumFeatureNavButton
               feature="role_play"
               label="Role-Play"
               description="Practise real-world Western Armenian conversations through interactive learning scenarios."

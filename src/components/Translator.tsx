@@ -1088,20 +1088,37 @@ export function Translator() {
             }
             panelActions={
               targetLanguage ===
-                  "hyw" &&
-                translation &&
-                Array.from(
-                  translation,
-                ).length <= 200 ? (
-                <PremiumFeatureNavButton
-                  feature="thesaurus"
-                  label="Thesaurus"
-                  description="Explore Western Armenian synonyms, antonyms and alternative ways to express this translation."
-                  href={`/thesaurus?text=${encodeURIComponent(
+                "hyw" &&
+              translation ? (
+                <>
+                  {Array.from(
                     translation,
-                  )}`}
-                  className="panel-action thesaurus-output-action"
-                />
+                  ).length <= 200 ? (
+                    <PremiumFeatureNavButton
+                      feature="thesaurus"
+                      label="Thesaurus"
+                      description="Explore Western Armenian synonyms, antonyms and alternative ways to express this translation."
+                      href={`/thesaurus?text=${encodeURIComponent(
+                        translation,
+                      )}`}
+                      className="panel-action thesaurus-output-action"
+                    />
+                  ) : null}
+
+                  {Array.from(
+                    translation,
+                  ).length <= 500 ? (
+                    <PremiumFeatureNavButton
+                      feature="word_breakdown"
+                      label="Word Breakdown"
+                      description="Understand this Western Armenian translation word by word with meanings, base forms and grammar."
+                      href={`/word-breakdown?text=${encodeURIComponent(
+                        translation,
+                      )}`}
+                      className="panel-action word-breakdown-output-action"
+                    />
+                  ) : null}
+                </>
               ) : undefined
             }
           />
@@ -1319,5 +1336,3 @@ export function Translator() {
     </>
   );
 }
-
-
