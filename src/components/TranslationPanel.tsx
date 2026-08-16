@@ -59,6 +59,7 @@ interface OutputPanelProps
   value: string;
   loading: boolean;
   transliteration?: string;
+  secondaryActions?: ReactNode;
 }
 
 type Props =
@@ -277,6 +278,12 @@ export function TranslationPanel(
                   props.transliteration
                 }
               </span>
+            </div>
+          ) : null}
+
+          {props.secondaryActions ? (
+            <div className="output-secondary-actions">
+              {props.secondaryActions}
             </div>
           ) : null}
 

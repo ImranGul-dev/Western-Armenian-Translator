@@ -3221,3 +3221,124 @@ html.dark .voice-speed-select {
     text-align: center;
   }
 }
+/* Translator secondary output actions */
+
+.output-secondary-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  margin: 0 16px 12px;
+  padding: 10px 0 0;
+  border-top: 1px solid var(--border);
+}
+
+.output-action-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.output-learning-actions {
+  justify-content: flex-end;
+}
+
+.output-action-group-label {
+  margin-right: 2px;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.output-secondary-action {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.1;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    border-color 120ms ease,
+    background 120ms ease,
+    color 120ms ease,
+    transform 120ms ease;
+}
+
+.output-secondary-action:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--surface-soft);
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.output-secondary-action:disabled {
+  opacity: 0.68;
+  cursor: default;
+  transform: none;
+}
+
+.saved-phrase-output-action.active {
+  border-color: color-mix(
+    in srgb,
+    var(--accent) 26%,
+    var(--border)
+  );
+  background: color-mix(
+    in srgb,
+    var(--accent-soft) 60%,
+    var(--surface)
+  );
+  color: var(--accent);
+}
+
+.learning-tool-output-action {
+  background: var(--surface-soft);
+}
+
+@media (max-width: 760px) {
+  .output-secondary-actions {
+    align-items: stretch;
+    flex-direction: column;
+    margin-inline: 16px;
+  }
+
+  .output-action-group {
+    width: 100%;
+  }
+
+  .output-learning-actions {
+    justify-content: flex-start;
+    padding-top: 9px;
+    border-top: 1px dashed var(--border);
+  }
+
+  .output-action-group-label {
+    flex: 0 0 100%;
+    width: 100%;
+  }
+
+  .output-secondary-action {
+    flex: 1 1 auto;
+    min-height: 40px;
+  }
+}
+
+@media (max-width: 480px) {
+  .output-save-actions .output-secondary-action,
+  .output-learning-actions .output-secondary-action {
+    flex: 1 1 calc(50% - 4px);
+  }
+}

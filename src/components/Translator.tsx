@@ -1332,98 +1332,105 @@ export function Translator() {
             transliteration={
               transliteration
             }
-            panelActions={
+            secondaryActions={
               translation ? (
                 <>
-                  <PremiumFeatureNavButton
-                    feature="saved_phrases"
-                    label={
-                      savedPhraseBusy ===
-                        "save"
-                        ? "Saving..."
-                        : currentSavedPhrase
-                          ? "Saved"
-                          : "Save Phrase"
-                    }
-                    description="Save useful translations to your account so you can return to them later."
-                    onActivate={() =>
-                      void saveCurrentPhrase(
-                        false,
-                      )
-                    }
-                    disabled={
-                      loading ||
-                      savedPhraseBusy !==
-                        null ||
-                      Boolean(
-                        currentSavedPhrase,
-                      )
-                    }
-                    className={`panel-action ${
-                      currentSavedPhrase
-                        ? "panel-action-success"
-                        : ""
-                    }`.trim()}
-                  />
+                  <div className="output-action-group output-save-actions">
+                    <PremiumFeatureNavButton
+                      feature="saved_phrases"
+                      label={
+                        savedPhraseBusy ===
+                          "save"
+                          ? "Saving..."
+                          : currentSavedPhrase
+                            ? "\u2713 Saved"
+                            : "Save"
+                      }
+                      description="Save useful translations to your account so you can return to them later."
+                      onActivate={() =>
+                        void saveCurrentPhrase(
+                          false,
+                        )
+                      }
+                      disabled={
+                        loading ||
+                        savedPhraseBusy !==
+                          null ||
+                        Boolean(
+                          currentSavedPhrase,
+                        )
+                      }
+                      className={`output-secondary-action saved-phrase-output-action ${
+                        currentSavedPhrase
+                          ? "active"
+                          : ""
+                      }`.trim()}
+                    />
 
-                  <PremiumFeatureNavButton
-                    feature="saved_phrases"
-                    label={
-                      savedPhraseBusy ===
-                        "favorite"
-                        ? "Updating..."
-                        : currentSavedPhrase
-                            ?.isFavorite
-                          ? "Unfavourite"
-                          : "Favourite"
-                    }
-                    description="Keep important translations in your Favourites for quick access and future practice."
-                    onActivate={() =>
-                      void toggleCurrentFavourite()
-                    }
-                    disabled={
-                      loading ||
-                      savedPhraseBusy !==
-                        null
-                    }
-                    className={`panel-action ${
-                      currentSavedPhrase
-                        ?.isFavorite
-                        ? "panel-action-success"
-                        : ""
-                    }`.trim()}
-                  />
+                    <PremiumFeatureNavButton
+                      feature="saved_phrases"
+                      label={
+                        savedPhraseBusy ===
+                          "favorite"
+                          ? "Updating..."
+                          : currentSavedPhrase
+                              ?.isFavorite
+                            ? "\u2605 Favourited"
+                            : "\u2606 Favourite"
+                      }
+                      description="Keep important translations in your Favourites for quick access and future practice."
+                      onActivate={() =>
+                        void toggleCurrentFavourite()
+                      }
+                      disabled={
+                        loading ||
+                        savedPhraseBusy !==
+                          null
+                      }
+                      className={`output-secondary-action saved-phrase-output-action ${
+                        currentSavedPhrase
+                          ?.isFavorite
+                          ? "active"
+                          : ""
+                      }`.trim()}
+                    />
+                  </div>
 
                   {targetLanguage ===
-                    "hyw" &&
-                  Array.from(
-                    translation,
-                  ).length <= 200 ? (
-                    <PremiumFeatureNavButton
-                      feature="thesaurus"
-                      label="Thesaurus"
-                      description="Explore Western Armenian synonyms, antonyms and alternative ways to express this translation."
-                      href={`/thesaurus?text=${encodeURIComponent(
-                        translation,
-                      )}`}
-                      className="panel-action thesaurus-output-action"
-                    />
-                  ) : null}
+                    "hyw" ? (
+                    <div className="output-action-group output-learning-actions">
+                      <span className="output-action-group-label">
+                        Learning tools
+                      </span>
 
-                  {targetLanguage ===
-                    "hyw" &&
-                  Array.from(
-                    translation,
-                  ).length <= 500 ? (
-                    <PremiumFeatureNavButton
-                      feature="word_breakdown"
-                      label="Word Breakdown"
-                      description="Understand this Western Armenian translation word by word with meanings, base forms and grammar."
-                      href={`/word-breakdown?text=${encodeURIComponent(
+                      {Array.from(
                         translation,
-                      )}`}
-                      className="panel-action word-breakdown-output-action"
-                    />
+                      ).length <= 200 ? (
+                        <PremiumFeatureNavButton
+                          feature="thesaurus"
+                          label="Thesaurus"
+                          description="Explore Western Armenian synonyms, antonyms and alternative ways to express this translation."
+                          href={`/thesaurus?text=${encodeURIComponent(
+                            translation,
+                          )}`}
+                          className="output-secondary-action learning-tool-output-action"
+                        />
+                      ) : null}
+
+                      {Array.from(
+                        translation,
+                      ).length <= 500 ? (
+                        <PremiumFeatureNavButton
+                          feature="word_breakdown"
+                          label="Word Breakdown"
+                          description="Understand this Western Armenian translation word by word with meanings, base forms and grammar."
+                          href={`/word-breakdown?text=${encodeURIComponent(
+                            translation,
+                          )}`}
+                          className="output-secondary-action learning-tool-output-action"
+                        />
+                      ) : null}
+                    </div>
                   ) : null}
                 </>
               ) : undefined
