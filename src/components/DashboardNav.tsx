@@ -115,6 +115,7 @@ const ADMIN_ITEMS = [
 
 const USER_ITEMS = [
   ["/dashboard", "Overview"],
+  ["/dashboard/saved-phrases", "Saved Phrases"],
   ["/dashboard/history", "History"],
   ["/dashboard/billing", "Billing"],
   ["/dashboard/settings", "Settings"],
