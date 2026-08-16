@@ -22,6 +22,8 @@ interface PremiumFeatureNavButtonProps {
   description: string;
   href?: string;
   className?: string;
+  onActivate?: () => void;
+  disabled?: boolean;
 }
 
 const FEATURE_BULLETS:
@@ -83,6 +85,8 @@ export function PremiumFeatureNavButton({
   description,
   href,
   className,
+  onActivate,
+  disabled = false,
 }: PremiumFeatureNavButtonProps) {
   const {
     user,
@@ -155,6 +159,29 @@ export function PremiumFeatureNavButton({
       );
     };
   }, [open]);
+
+  if (
+    !locked &&
+    onActivate
+  ) {
+    return (
+      <button
+        type="button"
+        className={
+          controlClassName
+        }
+        disabled={
+          loading ||
+          disabled
+        }
+        onClick={
+          onActivate
+        }
+      >
+        {label}
+      </button>
+    );
+  }
 
   if (
     !locked &&

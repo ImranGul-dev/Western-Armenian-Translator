@@ -40,6 +40,11 @@ import {
   type TranslationApiError,
 } from "@/lib/translation-api";
 
+import {
+  saveSavedPhrase,
+  setSavedPhraseFavorite,
+} from "@/lib/saved-phrases-api";
+
 import { countMeaningfulCharacters } from "@/lib/validation";
 import {
   hasLatinWesternArmenianInput,
@@ -52,12 +57,44 @@ import type { UsageSummary } from "@/types/database";
 const AUTO_TRANSLATE_DELAY_MS = 180;
 const GUEST_FREE_TRANSLATION_LIMIT = 5;
 
+type SavedPhraseBusyAction =
+  | "save"
+  | "favorite";
+
+interface CurrentSavedPhrase {
+  signature: string;
+  id: string;
+  isFavorite: boolean;
+}
+
+interface SavedPhraseFeedback {
+  tone:
+    | "success"
+    | "error";
+
+  text: string;
+}
+
 function requestSignature(
   text: string,
   source: LanguageCode,
   target: LanguageCode,
 ) {
   return `${source}\0${target}\0${text}`;
+}
+
+function savedPhraseSignature(
+  sourceText: string,
+  translatedText: string,
+  source: LanguageCode,
+  target: LanguageCode,
+) {
+  return [
+    source,
+    target,
+    sourceText,
+    translatedText,
+  ].join("\0");
 }
 
 export function Translator() {
@@ -139,6 +176,30 @@ export function Translator() {
     setUpgradeModalOpen,
   ] = useState(false);
 
+  const [
+    savedPhraseState,
+    setSavedPhraseState,
+  ] =
+    useState<CurrentSavedPhrase | null>(
+      null,
+    );
+
+  const [
+    savedPhraseBusy,
+    setSavedPhraseBusy,
+  ] =
+    useState<SavedPhraseBusyAction | null>(
+      null,
+    );
+
+  const [
+    savedPhraseFeedback,
+    setSavedPhraseFeedback,
+  ] =
+    useState<SavedPhraseFeedback | null>(
+      null,
+    );
+
   /*
    * Realtime-style automatic translation.
    *
@@ -185,6 +246,23 @@ export function Translator() {
     !profile &&
     guestUsage !== null &&
     guestUsage.remaining <= 0;
+
+  const currentSavedPhraseSignature =
+    translation
+      ? savedPhraseSignature(
+          sourceText,
+          translation,
+          sourceLanguage,
+          targetLanguage,
+        )
+      : "";
+
+  const currentSavedPhrase =
+    savedPhraseState
+      ?.signature ===
+    currentSavedPhraseSignature
+      ? savedPhraseState
+      : null;
 
   useEffect(() => {
     const supabase =
@@ -276,6 +354,17 @@ export function Translator() {
       window.removeEventListener("keydown", handleEscape);
     };
   }, [upgradeModalOpen]);
+
+  useEffect(() => {
+    setSavedPhraseFeedback(
+      null,
+    );
+  }, [
+    sourceText,
+    translation,
+    sourceLanguage,
+    targetLanguage,
+  ]);
 
   const cancel =
     useCallback(() => {
@@ -862,6 +951,163 @@ export function Translator() {
     }
   }
 
+  async function saveCurrentPhrase(
+    favourite: boolean,
+  ) {
+    if (
+      !session?.access_token ||
+      !sourceText.trim() ||
+      !translation.trim() ||
+      savedPhraseBusy
+    ) {
+      return;
+    }
+
+    const signature =
+      savedPhraseSignature(
+        sourceText,
+        translation,
+        sourceLanguage,
+        targetLanguage,
+      );
+
+    setSavedPhraseBusy(
+      favourite
+        ? "favorite"
+        : "save",
+    );
+
+    setSavedPhraseFeedback(
+      null,
+    );
+
+    try {
+      const saved =
+        await saveSavedPhrase(
+          session.access_token,
+          {
+            sourceText,
+            translatedText:
+              translation,
+
+            sourceLanguage,
+            targetLanguage,
+
+            isFavorite:
+              favourite,
+          },
+        );
+
+      setSavedPhraseState({
+        signature,
+
+        id:
+          saved.item.id,
+
+        isFavorite:
+          saved.item.isFavorite,
+      });
+
+      setSavedPhraseFeedback({
+        tone:
+          "success",
+
+        text:
+          saved.item.isFavorite
+            ? "Saved in Favourites."
+            : saved.created
+              ? "Saved to Saved Phrases."
+              : "This translation is already saved.",
+      });
+    } catch (cause) {
+      setSavedPhraseFeedback({
+        tone:
+          "error",
+
+        text:
+          cause instanceof Error
+            ? cause.message
+            : "The translation could not be saved.",
+      });
+    } finally {
+      setSavedPhraseBusy(
+        null,
+      );
+    }
+  }
+
+  async function toggleCurrentFavourite() {
+    if (
+      !session?.access_token ||
+      !sourceText.trim() ||
+      !translation.trim() ||
+      savedPhraseBusy
+    ) {
+      return;
+    }
+
+    if (
+      !currentSavedPhrase
+        ?.isFavorite
+    ) {
+      await saveCurrentPhrase(
+        true,
+      );
+
+      return;
+    }
+
+    setSavedPhraseBusy(
+      "favorite",
+    );
+
+    setSavedPhraseFeedback(
+      null,
+    );
+
+    try {
+      const updated =
+        await setSavedPhraseFavorite(
+          session.access_token,
+          currentSavedPhrase.id,
+          false,
+        );
+
+      setSavedPhraseState({
+        signature:
+          currentSavedPhraseSignature,
+
+        id:
+          updated.id,
+
+        isFavorite:
+          updated.isFavorite,
+      });
+
+      setSavedPhraseFeedback({
+        tone:
+          "success",
+
+        text:
+          "Removed from Favourites. The translation is still saved.",
+      });
+    } catch (cause) {
+      setSavedPhraseFeedback({
+        tone:
+          "error",
+
+        text:
+          cause instanceof Error
+            ? cause.message
+            : "The favourite could not be updated.",
+      });
+    } finally {
+      setSavedPhraseBusy(
+        null,
+      );
+    }
+  }
+
   return (
     <>
       <div className="translator-wrap">
@@ -1087,11 +1333,70 @@ export function Translator() {
               transliteration
             }
             panelActions={
-              targetLanguage ===
-                "hyw" &&
               translation ? (
                 <>
-                  {Array.from(
+                  <PremiumFeatureNavButton
+                    feature="saved_phrases"
+                    label={
+                      savedPhraseBusy ===
+                        "save"
+                        ? "Saving..."
+                        : currentSavedPhrase
+                          ? "Saved"
+                          : "Save Phrase"
+                    }
+                    description="Save useful translations to your account so you can return to them later."
+                    onActivate={() =>
+                      void saveCurrentPhrase(
+                        false,
+                      )
+                    }
+                    disabled={
+                      loading ||
+                      savedPhraseBusy !==
+                        null ||
+                      Boolean(
+                        currentSavedPhrase,
+                      )
+                    }
+                    className={`panel-action ${
+                      currentSavedPhrase
+                        ? "panel-action-success"
+                        : ""
+                    }`.trim()}
+                  />
+
+                  <PremiumFeatureNavButton
+                    feature="saved_phrases"
+                    label={
+                      savedPhraseBusy ===
+                        "favorite"
+                        ? "Updating..."
+                        : currentSavedPhrase
+                            ?.isFavorite
+                          ? "Unfavourite"
+                          : "Favourite"
+                    }
+                    description="Keep important translations in your Favourites for quick access and future practice."
+                    onActivate={() =>
+                      void toggleCurrentFavourite()
+                    }
+                    disabled={
+                      loading ||
+                      savedPhraseBusy !==
+                        null
+                    }
+                    className={`panel-action ${
+                      currentSavedPhrase
+                        ?.isFavorite
+                        ? "panel-action-success"
+                        : ""
+                    }`.trim()}
+                  />
+
+                  {targetLanguage ===
+                    "hyw" &&
+                  Array.from(
                     translation,
                   ).length <= 200 ? (
                     <PremiumFeatureNavButton
@@ -1105,7 +1410,9 @@ export function Translator() {
                     />
                   ) : null}
 
-                  {Array.from(
+                  {targetLanguage ===
+                    "hyw" &&
+                  Array.from(
                     translation,
                   ).length <= 500 ? (
                     <PremiumFeatureNavButton
@@ -1123,6 +1430,20 @@ export function Translator() {
             }
           />
         </div>
+
+        {savedPhraseFeedback ? (
+          <div
+            className={`form-message ${savedPhraseFeedback.tone}`}
+            role={
+              savedPhraseFeedback.tone ===
+                "error"
+                ? "alert"
+                : "status"
+            }
+          >
+            {savedPhraseFeedback.text}
+          </div>
+        ) : null}
 
         <div className="translator-bottom-bar">
           <StatusMessage
