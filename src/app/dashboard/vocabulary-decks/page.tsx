@@ -1295,12 +1295,25 @@ export default function VocabularyDecksPage() {
                       </p>
                     </div>
 
-                    <Link
-                      href="/dashboard/saved-phrases"
-                      className="vocabulary-deck-text-link"
-                    >
-                      View Saved Phrases
-                    </Link>
+                    <div className="vocabulary-deck-phrase-heading-actions">
+                      {deckItems.length ? (
+                        <Link
+                          href={`/dashboard/flashcards?deck=${encodeURIComponent(
+                            selectedDeck.id,
+                          )}`}
+                          className="primary-button inline-button"
+                        >
+                          Start Flashcards
+                        </Link>
+                      ) : null}
+
+                      <Link
+                        href="/dashboard/saved-phrases"
+                        className="vocabulary-deck-text-link"
+                      >
+                        View Saved Phrases
+                      </Link>
+                    </div>
                   </div>
 
                   {detailTotal >

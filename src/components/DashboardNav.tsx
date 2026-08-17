@@ -117,6 +117,7 @@ const USER_ITEMS = [
   ["/dashboard", "Overview"],
   ["/dashboard/saved-phrases", "Saved Phrases"],
   ["/dashboard/vocabulary-decks", "Vocabulary Decks"],
+  ["/dashboard/flashcards", "Flashcards"],
   ["/dashboard/history", "History"],
   ["/dashboard/billing", "Billing"],
   ["/dashboard/settings", "Settings"],
