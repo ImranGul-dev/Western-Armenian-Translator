@@ -763,25 +763,48 @@ Return ONLY one valid JSON object:
             normalizedInput,
         );
 
+      const synonyms =
+        removeInput(
+          validated.synonyms,
+        );
+
+      const antonyms =
+        removeInput(
+          validated.antonyms,
+        );
+
+      const alternatives =
+        removeInput(
+          validated.alternatives,
+        );
+
+      const historyResult =
+        await admin
+          .from("thesaurus_history")
+          .insert({
+            user_id:
+              user.id,
+            input_text:
+              text,
+            synonyms,
+            antonyms,
+            alternatives,
+          });
+
+      if (historyResult.error) {
+        console.error(
+          "Unable to save Thesaurus history",
+          historyResult.error,
+        );
+      }
+
       return json(
         {
           success: true,
           input: text,
-
-          synonyms:
-            removeInput(
-              validated.synonyms,
-            ),
-
-          antonyms:
-            removeInput(
-              validated.antonyms,
-            ),
-
-          alternatives:
-            removeInput(
-              validated.alternatives,
-            ),
+          synonyms,
+          antonyms,
+          alternatives,
         },
         200,
         cors,
