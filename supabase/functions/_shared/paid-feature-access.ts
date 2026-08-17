@@ -7,6 +7,7 @@ export type PaidFeature =
   | "saved_phrases"
   | "vocabulary_decks"
   | "flashcards"
+  | "history"
   | "practice_analytics";
 
 interface PaidFeatureAccount {
@@ -65,6 +66,12 @@ const FEATURE_PLAN_SLUGS:
   ]),
 
   flashcards: new Set([
+    "premium",
+    "business",
+    "admin",
+  ]),
+
+  history: new Set([
     "premium",
     "business",
     "admin",
