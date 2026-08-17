@@ -4,6 +4,7 @@ import Link from "next/link";
 import {
   useCallback,
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -21,7 +22,11 @@ import {
 
 import {
   loadFlashcardDeck,
+  recordFlashcardReview,
   type FlashcardDeckResult,
+  type FlashcardMastery,
+  type FlashcardPhrase,
+  type FlashcardRating,
 } from "@/lib/flashcards-api";
 
 import {
@@ -36,7 +41,6 @@ import {
 import {
   listVocabularyDecks,
   type VocabularyDeck,
-  type VocabularyDeckPhrase,
 } from "@/lib/vocabulary-decks-api";
 
 import {
@@ -49,6 +53,49 @@ const MAX_LOADED_DECKS =
 
 const MAX_FLASHCARDS =
   100;
+
+const REVIEW_ADVANCE_DELAY_MS =
+  650;
+
+
+const RATING_OPTIONS: ReadonlyArray<{
+  value: FlashcardRating;
+  label: string;
+  description: string;
+}> = [
+  {
+    value:
+      "again",
+    label:
+      "Again",
+    description:
+      "I did not remember it",
+  },
+  {
+    value:
+      "hard",
+    label:
+      "Hard",
+    description:
+      "I remembered with effort",
+  },
+  {
+    value:
+      "good",
+    label:
+      "Good",
+    description:
+      "I remembered it",
+  },
+  {
+    value:
+      "easy",
+    label:
+      "Easy",
+    description:
+      "I knew it immediately",
+  },
+];
 
 
 function languageName(
@@ -83,6 +130,53 @@ function westernTransliteration(
   return transliterateWesternArmenian(
     text,
   );
+}
+
+
+function ratingLabel(
+  rating: FlashcardRating,
+): string {
+  return RATING_OPTIONS.find(
+    (option) =>
+      option.value ===
+      rating,
+  )?.label ??
+    rating;
+}
+
+
+function masteryLabel(
+  mastery: FlashcardMastery,
+): string {
+  if (
+    mastery.reviewCount ===
+      0
+  ) {
+    return "New";
+  }
+
+  if (
+    mastery.score >=
+      90
+  ) {
+    return "Mastered";
+  }
+
+  if (
+    mastery.score >=
+      70
+  ) {
+    return "Strong";
+  }
+
+  if (
+    mastery.score >=
+      40
+  ) {
+    return "Developing";
+  }
+
+  return "Learning";
 }
 
 
@@ -162,10 +256,41 @@ export default function FlashcardsPage() {
     useState(false);
 
   const [
+    sessionId,
+    setSessionId,
+  ] =
+    useState("");
+
+  const [
+    reviewedRatings,
+    setReviewedRatings,
+  ] =
+    useState<
+      Record<string, FlashcardRating>
+    >({});
+
+  const [
+    reviewSaving,
+    setReviewSaving,
+  ] =
+    useState(false);
+
+  const [
+    reviewFeedback,
+    setReviewFeedback,
+  ] =
+    useState("");
+
+  const [
     error,
     setError,
   ] =
     useState("");
+
+  const reviewAdvanceTimerRef =
+    useRef<number | null>(
+      null,
+    );
 
 
   const hasAccess =
@@ -181,6 +306,59 @@ export default function FlashcardsPage() {
         planSlug:
           plan?.slug,
       },
+    );
+
+
+  const clearReviewAdvanceTimer =
+    useCallback(
+      () => {
+        if (
+          reviewAdvanceTimerRef.current ===
+            null
+        ) {
+          return;
+        }
+
+        window.clearTimeout(
+          reviewAdvanceTimerRef.current,
+        );
+
+        reviewAdvanceTimerRef.current =
+          null;
+      },
+      [],
+    );
+
+
+  const resetPracticeState =
+    useCallback(
+      () => {
+        clearReviewAdvanceTimer();
+
+        setStarted(
+          false,
+        );
+
+        setComplete(
+          false,
+        );
+
+        setCurrentIndex(
+          0,
+        );
+
+        setRevealed(
+          false,
+        );
+
+        setSessionId("");
+        setReviewedRatings({});
+        setReviewSaving(
+          false,
+        );
+        setReviewFeedback("");
+      },
+      [clearReviewAdvanceTimer],
     );
 
 
@@ -295,21 +473,7 @@ export default function FlashcardsPage() {
           null,
         );
 
-        setStarted(
-          false,
-        );
-
-        setComplete(
-          false,
-        );
-
-        setCurrentIndex(
-          0,
-        );
-
-        setRevealed(
-          false,
-        );
+        resetPracticeState();
 
         try {
           const result =
@@ -373,6 +537,7 @@ export default function FlashcardsPage() {
       },
       [
         hasAccess,
+        resetPracticeState,
         session?.access_token,
       ],
     );
@@ -441,6 +606,15 @@ export default function FlashcardsPage() {
   ]);
 
 
+  useEffect(
+    () =>
+      () => {
+        clearReviewAdvanceTimer();
+      },
+    [clearReviewAdvanceTimer],
+  );
+
+
   function chooseDeck(
     deckId: string,
   ) {
@@ -452,22 +626,7 @@ export default function FlashcardsPage() {
       null,
     );
 
-    setStarted(
-      false,
-    );
-
-    setComplete(
-      false,
-    );
-
-    setCurrentIndex(
-      0,
-    );
-
-    setRevealed(
-      false,
-    );
-
+    resetPracticeState();
     setError("");
   }
 
@@ -478,6 +637,8 @@ export default function FlashcardsPage() {
     ) {
       return;
     }
+
+    clearReviewAdvanceTimer();
 
     setStarted(
       true,
@@ -494,6 +655,17 @@ export default function FlashcardsPage() {
     setRevealed(
       false,
     );
+
+    setSessionId(
+      window.crypto.randomUUID(),
+    );
+
+    setReviewedRatings({});
+    setReviewSaving(
+      false,
+    );
+    setReviewFeedback("");
+    setError("");
 
     window.setTimeout(
       () => {
@@ -515,31 +687,20 @@ export default function FlashcardsPage() {
 
 
   function exitSession() {
-    setStarted(
-      false,
-    );
-
-    setComplete(
-      false,
-    );
-
-    setCurrentIndex(
-      0,
-    );
-
-    setRevealed(
-      false,
-    );
+    resetPracticeState();
   }
 
 
   function previousCard() {
     if (
       currentIndex <=
-        0
+        0 ||
+      reviewSaving
     ) {
       return;
     }
+
+    clearReviewAdvanceTimer();
 
     setCurrentIndex(
       (current) =>
@@ -552,16 +713,19 @@ export default function FlashcardsPage() {
     setRevealed(
       false,
     );
+
+    setReviewFeedback("");
   }
 
 
-  function continueSession() {
+  function advanceCard() {
     if (
-      !flashcardDeck ||
-      !revealed
+      !flashcardDeck
     ) {
       return;
     }
+
+    clearReviewAdvanceTimer();
 
     if (
       currentIndex >=
@@ -571,6 +735,12 @@ export default function FlashcardsPage() {
       setComplete(
         true,
       );
+
+      setReviewSaving(
+        false,
+      );
+
+      setReviewFeedback("");
 
       return;
     }
@@ -583,10 +753,146 @@ export default function FlashcardsPage() {
     setRevealed(
       false,
     );
+
+    setReviewSaving(
+      false,
+    );
+
+    setReviewFeedback("");
+  }
+
+
+  async function submitReview(
+    rating: FlashcardRating,
+  ) {
+    const accessToken =
+      session?.access_token;
+
+    const item =
+      flashcardDeck
+        ?.items[
+          currentIndex
+        ];
+
+    if (
+      !accessToken ||
+      !flashcardDeck ||
+      !item ||
+      !revealed ||
+      !sessionId ||
+      reviewSaving ||
+      reviewedRatings[
+        item.id
+      ]
+    ) {
+      return;
+    }
+
+    setReviewSaving(
+      true,
+    );
+
+    setReviewFeedback("");
+    setError("");
+
+    try {
+      const result =
+        await recordFlashcardReview(
+          accessToken,
+          {
+            deckId:
+              flashcardDeck.deck.id,
+
+            savedPhraseId:
+              item.id,
+
+            rating,
+
+            sessionId,
+          },
+        );
+
+      setFlashcardDeck(
+        (current) => {
+          if (!current) {
+            return current;
+          }
+
+          return {
+            ...current,
+
+            items:
+              current.items.map(
+                (candidate) =>
+                  candidate.id ===
+                    result.savedPhraseId
+                    ? {
+                        ...candidate,
+
+                        mastery:
+                          result.mastery,
+                      }
+                    : candidate,
+              ),
+          };
+        },
+      );
+
+      setReviewedRatings(
+        (current) => ({
+          ...current,
+          [item.id]:
+            rating,
+        }),
+      );
+
+      setReviewFeedback(
+        `${ratingLabel(
+          rating,
+        )} saved · Mastery ${result.mastery.score}/100`,
+      );
+
+      reviewAdvanceTimerRef.current =
+        window.setTimeout(
+          () => {
+            advanceCard();
+          },
+          REVIEW_ADVANCE_DELAY_MS,
+        );
+    } catch (cause) {
+      setReviewSaving(
+        false,
+      );
+
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "The Flashcard review could not be saved.",
+      );
+    }
+  }
+
+
+  function continueReviewedCard() {
+    if (
+      reviewSaving
+    ) {
+      return;
+    }
+
+    advanceCard();
   }
 
 
   function restartSession() {
+    if (
+      !flashcardDeck?.items.length
+    ) {
+      return;
+    }
+
+    clearReviewAdvanceTimer();
+
     setComplete(
       false,
     );
@@ -602,16 +908,39 @@ export default function FlashcardsPage() {
     setRevealed(
       false,
     );
+
+    setSessionId(
+      window.crypto.randomUUID(),
+    );
+
+    setReviewedRatings({});
+    setReviewSaving(
+      false,
+    );
+    setReviewFeedback("");
+    setError("");
   }
 
 
   const currentItem:
-    VocabularyDeckPhrase | null =
+    FlashcardPhrase | null =
     flashcardDeck
       ?.items[
         currentIndex
       ] ??
     null;
+
+  const currentReviewedRating =
+    currentItem
+      ? reviewedRatings[
+          currentItem.id
+        ] ?? null
+      : null;
+
+  const reviewedCount =
+    Object.keys(
+      reviewedRatings,
+    ).length;
 
 
   const progress =
@@ -734,7 +1063,8 @@ export default function FlashcardsPage() {
                       selectedDeckId
                     }
                     disabled={
-                      deckLoading
+                      deckLoading ||
+                      reviewSaving
                     }
                     onChange={(event) =>
                       chooseDeck(
@@ -767,7 +1097,8 @@ export default function FlashcardsPage() {
                   className="primary-button"
                   disabled={
                     !selectedDeckId ||
-                    deckLoading
+                    deckLoading ||
+                    reviewSaving
                   }
                   onClick={() =>
                     void loadDeckForStudy(
@@ -927,15 +1258,41 @@ export default function FlashcardsPage() {
                   </h2>
                 </div>
 
-                <button
-                  type="button"
-                  className="vocabulary-deck-secondary-button"
-                  onClick={
-                    exitSession
-                  }
-                >
-                  Exit session
-                </button>
+                <div className="flashcard-session-header-actions">
+                  <div
+                    className="flashcard-mastery-badge"
+                    aria-label={`Mastery ${currentItem.mastery.score} out of 100, ${masteryLabel(
+                      currentItem.mastery,
+                    )}`}
+                  >
+                    <span>
+                      Mastery
+                    </span>
+
+                    <strong>
+                      {currentItem.mastery.score}/100
+                    </strong>
+
+                    <small>
+                      {masteryLabel(
+                        currentItem.mastery,
+                      )}
+                    </small>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="vocabulary-deck-secondary-button"
+                    disabled={
+                      reviewSaving
+                    }
+                    onClick={
+                      exitSession
+                    }
+                  >
+                    Exit session
+                  </button>
+                </div>
               </header>
 
               <div
@@ -1047,13 +1404,123 @@ export default function FlashcardsPage() {
                 )}
               </article>
 
+              {revealed ? (
+                <section
+                  className="flashcard-review-panel"
+                  aria-live="polite"
+                >
+                  {currentReviewedRating ? (
+                    <div className="flashcard-review-saved">
+                      <div>
+                        <span className="flashcard-review-kicker">
+                          Reviewed this session
+                        </span>
+
+                        <strong>
+                          {ratingLabel(
+                            currentReviewedRating,
+                          )} · Mastery {currentItem.mastery.score}/100
+                        </strong>
+                      </div>
+
+                      {!reviewSaving ? (
+                        <button
+                          type="button"
+                          className="primary-button"
+                          onClick={
+                            continueReviewedCard
+                          }
+                        >
+                          {currentIndex ===
+                          flashcardDeck.items.length -
+                            1
+                            ? "Finish session"
+                            : "Continue"}
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flashcard-review-heading">
+                        <div>
+                          <span className="flashcard-review-kicker">
+                            Rate your recall
+                          </span>
+
+                          <h3>
+                            How well did you remember it?
+                          </h3>
+                        </div>
+
+                        <p>
+                          Your rating updates this phrase&apos;s mastery score.
+                        </p>
+                      </div>
+
+                      <div
+                        className="flashcard-rating-grid"
+                        aria-label="Flashcard recall rating"
+                      >
+                        {RATING_OPTIONS.map(
+                          (option) => (
+                            <button
+                              key={
+                                option.value
+                              }
+                              type="button"
+                              className={`flashcard-rating-button flashcard-rating-${option.value}`}
+                              disabled={
+                                reviewSaving
+                              }
+                              onClick={() =>
+                                void submitReview(
+                                  option.value,
+                                )
+                              }
+                            >
+                              <strong>
+                                {option.label}
+                              </strong>
+
+                              <span>
+                                {option.description}
+                              </span>
+                            </button>
+                          ),
+                        )}
+                      </div>
+                    </>
+                  )}
+
+                  {reviewSaving &&
+                  !reviewFeedback ? (
+                    <div className="flashcard-review-status">
+                      Saving review...
+                    </div>
+                  ) : null}
+
+                  {reviewFeedback ? (
+                    <div className="flashcard-review-feedback">
+                      <span
+                        aria-hidden="true"
+                      >
+                        {"\u2713"}
+                      </span>
+
+                      {reviewFeedback}
+                    </div>
+                  ) : null}
+                </section>
+              ) : null}
+
               <footer className="flashcard-session-controls">
                 <button
                   type="button"
                   className="vocabulary-deck-secondary-button"
                   disabled={
                     currentIndex ===
-                    0
+                      0 ||
+                    reviewSaving
                   }
                   onClick={
                     previousCard
@@ -1066,28 +1533,20 @@ export default function FlashcardsPage() {
                   <button
                     type="button"
                     className="primary-button flashcards-reveal-button"
-                    onClick={() =>
+                    onClick={() => {
+                      setReviewFeedback("");
+
                       setRevealed(
                         true,
-                      )
-                    }
+                      );
+                    }}
                   >
                     Reveal answer
                   </button>
                 ) : (
-                  <button
-                    type="button"
-                    className="primary-button flashcards-next-button"
-                    onClick={
-                      continueSession
-                    }
-                  >
-                    {currentIndex ===
-                    flashcardDeck.items.length -
-                      1
-                      ? "Finish session"
-                      : "Next card"}
-                  </button>
+                  <span className="flashcard-session-review-note">
+                    Choose a recall rating to continue.
+                  </span>
                 )}
               </footer>
             </section>
@@ -1111,15 +1570,15 @@ export default function FlashcardsPage() {
               </p>
 
               <h2>
-                Nice work
+                Practice complete
               </h2>
 
               <p>
                 You reviewed{" "}
                 <strong>
-                  {flashcardDeck.items.length.toLocaleString()}
+                  {reviewedCount.toLocaleString()}
                 </strong>{" "}
-                {flashcardDeck.items.length ===
+                {reviewedCount ===
                 1
                   ? "card"
                   : "cards"}{" "}
@@ -1127,6 +1586,10 @@ export default function FlashcardsPage() {
                 <strong>
                   {flashcardDeck.deck.name}
                 </strong>.
+              </p>
+
+              <p className="flashcards-complete-mastery-note">
+                Your recall ratings and Vocabulary Mastery Scores have been saved.
               </p>
 
               <div className="flashcards-complete-actions">
