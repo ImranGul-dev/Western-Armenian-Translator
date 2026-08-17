@@ -27,6 +27,9 @@ verify_jwt = false
 [functions.flashcards]
 verify_jwt = false
 
+[functions.vocabulary-mastery]
+verify_jwt = false
+
 [functions.stripe-checkout]
 verify_jwt = false
 
