@@ -18,6 +18,12 @@ port = 54323
 [functions.translate]
 verify_jwt = false
 
+[functions.thesaurus]
+verify_jwt = false
+
+[functions.history]
+verify_jwt = false
+
 [functions.stripe-checkout]
 verify_jwt = false
 
