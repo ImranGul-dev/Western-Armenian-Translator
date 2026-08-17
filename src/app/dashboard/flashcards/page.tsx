@@ -54,9 +54,6 @@ const MAX_LOADED_DECKS =
 const MAX_FLASHCARDS =
   100;
 
-const REVIEW_ADVANCE_DELAY_MS =
-  650;
-
 
 const RATING_OPTIONS: ReadonlyArray<{
   value: FlashcardRating;
@@ -852,13 +849,9 @@ export default function FlashcardsPage() {
         )} saved · Mastery ${result.mastery.score}/100`,
       );
 
-      reviewAdvanceTimerRef.current =
-        window.setTimeout(
-          () => {
-            advanceCard();
-          },
-          REVIEW_ADVANCE_DELAY_MS,
-        );
+      setReviewSaving(
+        false,
+      );
     } catch (cause) {
       setReviewSaving(
         false,
@@ -1545,7 +1538,9 @@ export default function FlashcardsPage() {
                   </button>
                 ) : (
                   <span className="flashcard-session-review-note">
-                    Choose a recall rating to continue.
+                    {currentReviewedRating
+                      ? "Review saved. Continue when you are ready."
+                      : "Choose a recall rating to continue."}
                   </span>
                 )}
               </footer>
