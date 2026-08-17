@@ -31,9 +31,19 @@ type LanguageCode =
   | "hye";
 
 
+type FlashcardRating =
+  | "again"
+  | "hard"
+  | "good"
+  | "easy";
+
+
 interface FlashcardsRequest {
   action?: unknown;
   deckId?: unknown;
+  savedPhraseId?: unknown;
+  rating?: unknown;
+  sessionId?: unknown;
   limit?: unknown;
   offset?: unknown;
 }
@@ -74,6 +84,29 @@ interface SavedPhraseRow {
 }
 
 
+interface VocabularyMasteryRow {
+  saved_phrase_id: string;
+  mastery_score: number;
+  review_count: number;
+  successful_review_count: number;
+  current_recall_streak: number;
+  last_rating: FlashcardRating | null;
+  last_reviewed_at: string | null;
+}
+
+
+interface ReviewResultRow {
+  review_event_id: string;
+  session_id: string;
+  mastery_score: number;
+  review_count: number;
+  successful_review_count: number;
+  current_recall_streak: number;
+  last_rating: FlashcardRating;
+  last_reviewed_at: string;
+}
+
+
 const MAX_FLASHCARD_LIMIT =
   100;
 
@@ -98,6 +131,17 @@ const SAVED_PHRASE_COLUMNS = [
   "is_favorite",
   "created_at",
   "updated_at",
+].join(",");
+
+
+const MASTERY_COLUMNS = [
+  "saved_phrase_id",
+  "mastery_score",
+  "review_count",
+  "successful_review_count",
+  "current_recall_streak",
+  "last_rating",
+  "last_reviewed_at",
 ].join(",");
 
 
@@ -190,6 +234,18 @@ function validUuid(
 }
 
 
+function validRating(
+  value: string,
+): value is FlashcardRating {
+  return (
+    value === "again" ||
+    value === "hard" ||
+    value === "good" ||
+    value === "easy"
+  );
+}
+
+
 function deckResponse(
   row: VocabularyDeckRow,
   phraseCount: number,
@@ -215,9 +271,41 @@ function deckResponse(
 }
 
 
+function masteryResponse(
+  row?: VocabularyMasteryRow,
+) {
+  return {
+    score:
+      row?.mastery_score ??
+      0,
+
+    reviewCount:
+      row?.review_count ??
+      0,
+
+    successfulReviewCount:
+      row?.successful_review_count ??
+      0,
+
+    currentRecallStreak:
+      row?.current_recall_streak ??
+      0,
+
+    lastRating:
+      row?.last_rating ??
+      null,
+
+    lastReviewedAt:
+      row?.last_reviewed_at ??
+      null,
+  };
+}
+
+
 function phraseResponse(
   row: SavedPhraseRow,
   addedAt: string,
+  mastery?: VocabularyMasteryRow,
 ) {
   return {
     id:
@@ -245,6 +333,11 @@ function phraseResponse(
       row.updated_at,
 
     addedAt,
+
+    mastery:
+      masteryResponse(
+        mastery,
+      ),
   };
 }
 
@@ -482,34 +575,49 @@ async function loadFlashcardDeck(
     );
 
 
-  const {
-    data:
-      phraseData,
+  const [
+    phraseResult,
+    masteryResult,
+  ] =
+    await Promise.all([
+      admin
+        .from(
+          "saved_phrases",
+        )
+        .select(
+          SAVED_PHRASE_COLUMNS,
+        )
+        .eq(
+          "user_id",
+          userId,
+        )
+        .in(
+          "id",
+          phraseIds,
+        ),
 
-    error:
-      phraseError,
-  } =
-    await admin
-      .from(
-        "saved_phrases",
-      )
-      .select(
-        SAVED_PHRASE_COLUMNS,
-      )
-      .eq(
-        "user_id",
-        userId,
-      )
-      .in(
-        "id",
-        phraseIds,
-      );
+      admin
+        .from(
+          "vocabulary_mastery",
+        )
+        .select(
+          MASTERY_COLUMNS,
+        )
+        .eq(
+          "user_id",
+          userId,
+        )
+        .in(
+          "saved_phrase_id",
+          phraseIds,
+        ),
+    ]);
 
 
-  if (phraseError) {
+  if (phraseResult.error) {
     console.error(
       "flashcards phrase lookup failed",
-      phraseError,
+      phraseResult.error,
     );
 
     return json(
@@ -529,11 +637,40 @@ async function loadFlashcardDeck(
   }
 
 
+  if (masteryResult.error) {
+    console.error(
+      "flashcards mastery lookup failed",
+      masteryResult.error,
+    );
+
+    return json(
+      {
+        success:
+          false,
+
+        error:
+          "The Flashcard mastery data could not be loaded.",
+
+        code:
+          "flashcards_mastery_load_failed",
+      },
+      500,
+      cors,
+    );
+  }
+
+
   const phraseRows =
     (
-      phraseData ??
+      phraseResult.data ??
       []
     ) as SavedPhraseRow[];
+
+  const masteryRows =
+    (
+      masteryResult.data ??
+      []
+    ) as VocabularyMasteryRow[];
 
 
   const phrasesById =
@@ -543,6 +680,18 @@ async function loadFlashcardDeck(
           row,
         ) => [
           row.id,
+          row,
+        ],
+      ),
+    );
+
+  const masteryByPhraseId =
+    new Map(
+      masteryRows.map(
+        (
+          row,
+        ) => [
+          row.saved_phrase_id,
           row,
         ],
       ),
@@ -568,6 +717,10 @@ async function loadFlashcardDeck(
           return phraseResponse(
             phrase,
             membership.created_at,
+            masteryByPhraseId.get(
+              membership
+                .saved_phrase_id,
+            ),
           );
         },
       )
@@ -603,6 +756,266 @@ async function loadFlashcardDeck(
 
       limit,
       offset,
+    },
+    200,
+    cors,
+  );
+}
+
+
+async function recordFlashcardReview(
+  admin: SupabaseClient,
+  userId: string,
+  payload: FlashcardsRequest,
+  cors: Record<string, string>,
+): Promise<Response> {
+  const deckId =
+    cleanString(
+      payload.deckId,
+      100,
+    );
+
+  const savedPhraseId =
+    cleanString(
+      payload.savedPhraseId,
+      100,
+    );
+
+  const sessionId =
+    cleanString(
+      payload.sessionId,
+      100,
+    );
+
+  const rating =
+    cleanString(
+      payload.rating,
+      20,
+    ).toLowerCase();
+
+
+  if (
+    !deckId ||
+    !validUuid(
+      deckId,
+    )
+  ) {
+    return json(
+      {
+        success:
+          false,
+
+        error:
+          "A valid Vocabulary Deck ID is required.",
+
+        code:
+          "invalid_vocabulary_deck_id",
+      },
+      400,
+      cors,
+    );
+  }
+
+
+  if (
+    !savedPhraseId ||
+    !validUuid(
+      savedPhraseId,
+    )
+  ) {
+    return json(
+      {
+        success:
+          false,
+
+        error:
+          "A valid Saved Phrase ID is required.",
+
+        code:
+          "invalid_saved_phrase_id",
+      },
+      400,
+      cors,
+    );
+  }
+
+
+  if (
+    !sessionId ||
+    !validUuid(
+      sessionId,
+    )
+  ) {
+    return json(
+      {
+        success:
+          false,
+
+        error:
+          "A valid Flashcards session ID is required.",
+
+        code:
+          "invalid_flashcards_session_id",
+      },
+      400,
+      cors,
+    );
+  }
+
+
+  if (
+    !validRating(
+      rating,
+    )
+  ) {
+    return json(
+      {
+        success:
+          false,
+
+        error:
+          "Choose Again, Hard, Good or Easy for this Flashcard.",
+
+        code:
+          "invalid_flashcard_rating",
+      },
+      400,
+      cors,
+    );
+  }
+
+
+  const {
+    data,
+    error,
+  } =
+    await admin.rpc(
+      "record_vocabulary_review",
+      {
+        p_user_id:
+          userId,
+
+        p_saved_phrase_id:
+          savedPhraseId,
+
+        p_rating:
+          rating,
+
+        p_deck_id:
+          deckId,
+
+        p_session_id:
+          sessionId,
+      },
+    );
+
+
+  if (error) {
+    console.error(
+      "flashcards review recording failed",
+      error,
+    );
+
+    const missing =
+      error.code ===
+        "P0002";
+
+    const invalidMembership =
+      error.code ===
+        "23503";
+
+    return json(
+      {
+        success:
+          false,
+
+        error:
+          missing
+            ? "Saved Phrase not found."
+            : invalidMembership
+              ? "This Saved Phrase is not in the selected Vocabulary Deck."
+              : "The Flashcard review could not be saved.",
+
+        code:
+          missing
+            ? "saved_phrase_not_found"
+            : invalidMembership
+              ? "flashcard_not_in_deck"
+              : "flashcard_review_failed",
+      },
+      missing
+        ? 404
+        : invalidMembership
+          ? 409
+          : 500,
+      cors,
+    );
+  }
+
+
+  const rows =
+    (
+      data ??
+      []
+    ) as ReviewResultRow[];
+
+  const row =
+    rows[0];
+
+
+  if (!row) {
+    return json(
+      {
+        success:
+          false,
+
+        error:
+          "The Flashcard review returned no mastery result.",
+
+        code:
+          "flashcard_review_result_missing",
+      },
+      500,
+      cors,
+    );
+  }
+
+
+  return json(
+    {
+      success:
+        true,
+
+      action:
+        "record_review",
+
+      reviewEventId:
+        row.review_event_id,
+
+      sessionId:
+        row.session_id,
+
+      savedPhraseId,
+
+      mastery: {
+        score:
+          row.mastery_score,
+
+        reviewCount:
+          row.review_count,
+
+        successfulReviewCount:
+          row.successful_review_count,
+
+        currentRecallStreak:
+          row.current_recall_streak,
+
+        lastRating:
+          row.last_rating,
+
+        lastReviewedAt:
+          row.last_reviewed_at,
+      },
     },
     200,
     cors,
@@ -807,7 +1220,9 @@ Deno.serve(
 
     if (
       action !==
-        "load_deck"
+        "load_deck" &&
+      action !==
+        "record_review"
     ) {
       return json(
         {
@@ -922,6 +1337,19 @@ Deno.serve(
               true,
           },
           403,
+          cors,
+        );
+      }
+
+
+      if (
+        action ===
+          "record_review"
+      ) {
+        return await recordFlashcardReview(
+          admin,
+          user.id,
+          payload,
           cors,
         );
       }
