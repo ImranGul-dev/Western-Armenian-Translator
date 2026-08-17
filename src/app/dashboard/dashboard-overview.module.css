@@ -1,0 +1,253 @@
+.streakCard {
+  display: grid;
+  gap: 18px;
+}
+
+.streakHeading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.streakHeading h2 {
+  margin: 0;
+}
+
+.streakHeading p {
+  margin: 5px 0 0;
+  color: var(--text-soft);
+  font-size: 14px;
+}
+
+.streakStatus {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 30px;
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--text-soft);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.streakStatusDone {
+  border-color: color-mix(in srgb, var(--success) 28%, var(--border));
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.streakStatusDot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.streakOverview {
+  display: grid;
+  grid-template-columns: minmax(250px, 0.9fr) minmax(0, 1.6fr);
+  gap: 14px;
+}
+
+.currentStreak {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 9px;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface-soft) 88%, var(--accent-soft));
+}
+
+.currentStreak > span {
+  color: var(--text-soft);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.currentStreakValue {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.currentStreakValue strong {
+  font-size: clamp(36px, 5vw, 52px);
+  line-height: 1;
+  letter-spacing: -0.045em;
+}
+
+.currentStreakValue span {
+  color: var(--text-soft);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.currentStreak p {
+  margin: 0;
+  max-width: 330px;
+  color: var(--text-soft);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.currentStreak a {
+  margin-top: 2px;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.currentStreak a:hover {
+  text-decoration: underline;
+}
+
+.streakMetrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.streakMetric {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.streakMetric > span {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.streakMetric strong {
+  overflow-wrap: anywhere;
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.streakMetric small {
+  margin-top: auto;
+  color: var(--text-soft);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.streakFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 2px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.streakFooter span:last-child {
+  text-align: right;
+}
+
+.streakLoading {
+  min-height: 150px;
+  display: grid;
+  place-items: center;
+  border: 1px dashed var(--border-strong);
+  border-radius: 8px;
+  color: var(--text-soft);
+  text-align: center;
+}
+
+.streakError {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--danger) 30%, var(--border));
+  border-radius: 8px;
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.streakError strong {
+  color: inherit;
+}
+
+.streakError p {
+  margin: 0;
+  font-size: 13px;
+}
+
+.streakLocked {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.streakLocked div {
+  display: grid;
+  gap: 4px;
+}
+
+.streakLocked strong {
+  font-size: 15px;
+}
+
+.streakLocked p {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 13px;
+}
+
+.streakLocked a {
+  flex: 0 0 auto;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.streakLocked a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 900px) {
+  .streakOverview {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .streakHeading,
+  .streakFooter,
+  .streakLocked {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .streakMetrics {
+    grid-template-columns: 1fr;
+  }
+
+  .streakFooter span:last-child {
+    text-align: left;
+  }
+}
