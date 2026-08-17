@@ -8,6 +8,7 @@ export type PaidFeature =
   | "vocabulary_decks"
   | "flashcards"
   | "history"
+  | "practice_streak"
   | "practice_analytics";
 
 interface PaidFeatureAccessContext {
@@ -70,6 +71,12 @@ const FEATURE_PLAN_SLUGS:
   ]),
 
   history: new Set([
+    "premium",
+    "business",
+    "admin",
+  ]),
+
+  practice_streak: new Set([
     "premium",
     "business",
     "admin",
