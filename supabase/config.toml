@@ -30,6 +30,9 @@ verify_jwt = false
 [functions.vocabulary-mastery]
 verify_jwt = false
 
+[functions.practice-streak]
+verify_jwt = false
+
 [functions.stripe-checkout]
 verify_jwt = false
 
