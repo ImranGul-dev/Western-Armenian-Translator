@@ -24,6 +24,9 @@ verify_jwt = false
 [functions.history]
 verify_jwt = false
 
+[functions.flashcards]
+verify_jwt = false
+
 [functions.stripe-checkout]
 verify_jwt = false
 
