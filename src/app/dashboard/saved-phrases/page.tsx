@@ -20,6 +20,10 @@ import {
 } from "@/components/ProtectedRoute";
 
 import {
+  VocabularyMasteryBadge,
+} from "@/components/VocabularyMasteryBadge";
+
+import {
   useAuth,
 } from "@/contexts/AuthContext";
 
@@ -943,6 +947,12 @@ export default function SavedPhrasesPage() {
                         </div>
 
                         <div className="saved-phrase-card-meta">
+                          <VocabularyMasteryBadge
+                            savedPhraseId={
+                              item.id
+                            }
+                          />
+
                           {item.isFavorite ? (
                             <span className="saved-phrase-favourite-badge">
                               <span
