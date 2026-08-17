@@ -33,6 +33,13 @@ import {
 } from "@/lib/paid-feature-access";
 
 import {
+  downloadVocabularyDeckCsv,
+  loadVocabularyDeckExportData,
+  openVocabularyDeckPdfWindow,
+  renderVocabularyDeckPdf,
+} from "@/lib/vocabulary-deck-export";
+
+import {
   createVocabularyDeck,
   deleteVocabularyDeck,
   getVocabularyDeck,
@@ -222,6 +229,14 @@ export default function VocabularyDecksPage() {
     setBusyAction,
   ] =
     useState<string | null>(
+      null,
+    );
+
+  const [
+    exporting,
+    setExporting,
+  ] =
+    useState<"csv" | "pdf" | null>(
       null,
     );
 
@@ -856,6 +871,120 @@ export default function VocabularyDecksPage() {
   }
 
 
+  async function exportCsv() {
+    const accessToken =
+      session?.access_token;
+
+    const deck =
+      selectedDeck;
+
+    if (
+      !accessToken ||
+      !deck ||
+      exporting
+    ) {
+      return;
+    }
+
+    setExporting(
+      "csv",
+    );
+
+    setError("");
+    setMessage("");
+
+    try {
+      const data =
+        await loadVocabularyDeckExportData(
+          accessToken,
+          deck.id,
+        );
+
+      downloadVocabularyDeckCsv(
+        data,
+      );
+
+      setMessage(
+        "Vocabulary Deck CSV exported.",
+      );
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "The Vocabulary Deck CSV could not be exported.",
+      );
+    } finally {
+      setExporting(
+        null,
+      );
+    }
+  }
+
+
+  async function exportPdf() {
+    const accessToken =
+      session?.access_token;
+
+    const deck =
+      selectedDeck;
+
+    if (
+      !accessToken ||
+      !deck ||
+      exporting
+    ) {
+      return;
+    }
+
+    const printWindow =
+      openVocabularyDeckPdfWindow();
+
+    if (!printWindow) {
+      setError(
+        "The printable PDF window was blocked. Allow pop-ups for this site and try again.",
+      );
+
+      return;
+    }
+
+    setExporting(
+      "pdf",
+    );
+
+    setError("");
+    setMessage("");
+
+    try {
+      const data =
+        await loadVocabularyDeckExportData(
+          accessToken,
+          deck.id,
+        );
+
+      renderVocabularyDeckPdf(
+        printWindow,
+        data,
+      );
+
+      setMessage(
+        "Printable Vocabulary Deck opened. Choose Save as PDF in the print dialog.",
+      );
+    } catch (cause) {
+      printWindow.close();
+
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "The printable Vocabulary Deck could not be prepared.",
+      );
+    } finally {
+      setExporting(
+        null,
+      );
+    }
+  }
+
+
   if (
     authLoading
   ) {
@@ -1296,6 +1425,48 @@ export default function VocabularyDecksPage() {
                     </div>
 
                     <div className="vocabulary-deck-phrase-heading-actions">
+                      <button
+                        type="button"
+                        className="vocabulary-deck-secondary-button"
+                        disabled={
+                          Boolean(
+                            busyAction,
+                          ) ||
+                          Boolean(
+                            exporting,
+                          )
+                        }
+                        onClick={() =>
+                          void exportCsv()
+                        }
+                      >
+                        {exporting ===
+                        "csv"
+                          ? "Exporting CSV..."
+                          : "Export CSV"}
+                      </button>
+
+                      <button
+                        type="button"
+                        className="vocabulary-deck-secondary-button"
+                        disabled={
+                          Boolean(
+                            busyAction,
+                          ) ||
+                          Boolean(
+                            exporting,
+                          )
+                        }
+                        onClick={() =>
+                          void exportPdf()
+                        }
+                      >
+                        {exporting ===
+                        "pdf"
+                          ? "Preparing PDF..."
+                          : "Export PDF"}
+                      </button>
+
                       {deckItems.length ? (
                         <Link
                           href={`/dashboard/flashcards?deck=${encodeURIComponent(
