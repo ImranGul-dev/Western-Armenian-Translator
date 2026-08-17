@@ -8,14 +8,45 @@ import type {
 } from "@/lib/vocabulary-decks-api";
 
 
+export type FlashcardRating =
+  | "again"
+  | "hard"
+  | "good"
+  | "easy";
+
+
+export interface FlashcardMastery {
+  score: number;
+  reviewCount: number;
+  successfulReviewCount: number;
+  currentRecallStreak: number;
+  lastRating: FlashcardRating | null;
+  lastReviewedAt: string | null;
+}
+
+
+export interface FlashcardPhrase
+  extends VocabularyDeckPhrase {
+  mastery: FlashcardMastery;
+}
+
+
 export interface FlashcardDeckResult {
   deck: VocabularyDeck;
 
-  items: VocabularyDeckPhrase[];
+  items: FlashcardPhrase[];
 
   total: number;
   limit: number;
   offset: number;
+}
+
+
+export interface RecordFlashcardReviewResult {
+  reviewEventId: string;
+  sessionId: string;
+  savedPhraseId: string;
+  mastery: FlashcardMastery;
 }
 
 
@@ -182,6 +213,92 @@ function requireDeck(
 }
 
 
+function requireMastery(
+  value: unknown,
+): FlashcardMastery {
+  if (
+    !value ||
+    typeof value !==
+      "object"
+  ) {
+    throw new Error(
+      "The Flashcards service returned invalid mastery data.",
+    );
+  }
+
+  const record =
+    value as Record<string, unknown>;
+
+  return {
+    score:
+      typeof record.score ===
+        "number"
+        ? record.score
+        : 0,
+
+    reviewCount:
+      typeof record.reviewCount ===
+        "number"
+        ? record.reviewCount
+        : 0,
+
+    successfulReviewCount:
+      typeof record.successfulReviewCount ===
+        "number"
+        ? record.successfulReviewCount
+        : 0,
+
+    currentRecallStreak:
+      typeof record.currentRecallStreak ===
+        "number"
+        ? record.currentRecallStreak
+        : 0,
+
+    lastRating:
+      record.lastRating === "again" ||
+      record.lastRating === "hard" ||
+      record.lastRating === "good" ||
+      record.lastRating === "easy"
+        ? record.lastRating
+        : null,
+
+    lastReviewedAt:
+      typeof record.lastReviewedAt ===
+        "string"
+        ? record.lastReviewedAt
+        : null,
+  };
+}
+
+
+function requireFlashcardPhrase(
+  value: unknown,
+): FlashcardPhrase {
+  if (
+    !value ||
+    typeof value !==
+      "object"
+  ) {
+    throw new Error(
+      "The Flashcards service returned an invalid Flashcard.",
+    );
+  }
+
+  const record =
+    value as Record<string, unknown>;
+
+  return {
+    ...(record as unknown as
+      VocabularyDeckPhrase),
+
+    mastery:
+      requireMastery(
+        record.mastery,
+      ),
+  };
+}
+
+
 export async function loadFlashcardDeck(
   accessToken: string,
   deckId: string,
@@ -222,8 +339,9 @@ export async function loadFlashcardDeck(
       Array.isArray(
         data.items,
       )
-        ? data.items as
-          VocabularyDeckPhrase[]
+        ? data.items.map(
+            requireFlashcardPhrase,
+          )
         : [],
 
     total:
@@ -245,5 +363,70 @@ export async function loadFlashcardDeck(
         ? data.offset
         : options.offset ??
           0,
+  };
+}
+
+
+export async function recordFlashcardReview(
+  accessToken: string,
+  input: {
+    deckId: string;
+    savedPhraseId: string;
+    rating: FlashcardRating;
+    sessionId: string;
+  },
+  signal?: AbortSignal,
+): Promise<RecordFlashcardReviewResult> {
+  const data =
+    await requestFlashcards(
+      accessToken,
+      {
+        action:
+          "record_review",
+
+        deckId:
+          input.deckId,
+
+        savedPhraseId:
+          input.savedPhraseId,
+
+        rating:
+          input.rating,
+
+        sessionId:
+          input.sessionId,
+      },
+      signal,
+    );
+
+
+  if (
+    typeof data.reviewEventId !==
+      "string" ||
+    typeof data.sessionId !==
+      "string" ||
+    typeof data.savedPhraseId !==
+      "string"
+  ) {
+    throw new Error(
+      "The Flashcards service returned an invalid review result.",
+    );
+  }
+
+
+  return {
+    reviewEventId:
+      data.reviewEventId,
+
+    sessionId:
+      data.sessionId,
+
+    savedPhraseId:
+      data.savedPhraseId,
+
+    mastery:
+      requireMastery(
+        data.mastery,
+      ),
   };
 }
