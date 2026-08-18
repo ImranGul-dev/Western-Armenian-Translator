@@ -24,6 +24,14 @@ const ADMIN_ITEMS = [
       "Check the last 30 days to compare translation volume and failure rate, then review the audit log to see who changed a grammar rule or user role.",
   },
   {
+    href: "/admin/features",
+    label: "Features",
+    description:
+      "Use this section to temporarily enable or disable product features globally for maintenance, staged releases or operational incidents. These switches do not change customer plan entitlements.",
+    example:
+      "If Role-Play has a production issue, disable Role-Play here while leaving translations and other learning tools available.",
+  },
+  {
     href: "/admin/glossary",
     label: "Glossary",
     description:
