@@ -13,6 +13,10 @@ import {
 } from "@/components/CopyButton";
 
 import {
+  GrammarTooltipPanel,
+} from "@/components/GrammarTooltipPanel";
+
+import {
   LanguageSelector,
 } from "@/components/LanguageSelector";
 
@@ -21,7 +25,6 @@ import {
 } from "@/components/VoiceListenButton";
 
 import {
-  LANGUAGES,
   type LanguageCode,
 } from "@/lib/languages";
 
@@ -280,6 +283,12 @@ export function TranslationPanel(
               </span>
             </div>
           ) : null}
+
+          <GrammarTooltipPanel
+            text={props.value}
+            language={props.language}
+            loading={props.loading}
+          />
 
           {props.secondaryActions ? (
             <div className="output-secondary-actions">
