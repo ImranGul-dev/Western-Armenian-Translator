@@ -6,7 +6,21 @@ import { DashboardShell } from "@/components/DashboardShell";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { useAuth } from "@/contexts/AuthContext";
 import { CountryPicker } from "@/components/CountryPicker";
+import {
+  DEFAULT_LEARNING_PREFERENCES,
+  normalizeLearningPreferences,
+  type LearningMicrophoneLanguage,
+  type LearningPlaybackSpeed,
+  type LearningVoice,
+} from "@/lib/learning-preferences";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+
+const PLAYBACK_SPEED_OPTIONS: LearningPlaybackSpeed[] = [
+  0.75,
+  1,
+  1.25,
+  1.5,
+];
 
 export default function SettingsPage() {
   const { profile, refreshProfile } = useAuth();
@@ -14,19 +28,49 @@ export default function SettingsPage() {
   const [countryCode, setCountryCode] = useState("");
   const [history, setHistory] = useState(true);
   const [queryReviewConsent, setQueryReviewConsent] = useState(false);
+  const [ttsVoice, setTtsVoice] = useState<LearningVoice>(
+    DEFAULT_LEARNING_PREFERENCES.tts_voice,
+  );
+  const [audioSpeed, setAudioSpeed] = useState<LearningPlaybackSpeed>(
+    DEFAULT_LEARNING_PREFERENCES.audio_speed,
+  );
+  const [pronunciationSpeed, setPronunciationSpeed] =
+    useState<LearningPlaybackSpeed>(
+      DEFAULT_LEARNING_PREFERENCES.pronunciation_speed,
+    );
+  const [microphoneLanguage, setMicrophoneLanguage] =
+    useState<LearningMicrophoneLanguage>(
+      DEFAULT_LEARNING_PREFERENCES.microphone_language,
+    );
+  const [autoTranslate, setAutoTranslate] = useState(
+    DEFAULT_LEARNING_PREFERENCES.auto_translate,
+  );
   const [message, setMessage] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    const preferences = normalizeLearningPreferences(
+      profile?.learning_preferences,
+    );
+
     setName(profile?.display_name || "");
     setCountryCode(profile?.country_code || "");
     setHistory(profile?.history_enabled ?? true);
     setQueryReviewConsent(profile?.query_review_consent ?? false);
+    setTtsVoice(preferences.tts_voice);
+    setAudioSpeed(preferences.audio_speed);
+    setPronunciationSpeed(preferences.pronunciation_speed);
+    setMicrophoneLanguage(preferences.microphone_language);
+    setAutoTranslate(preferences.auto_translate);
   }, [profile]);
 
   async function save(event: React.FormEvent) {
     event.preventDefault();
 
-    if (!profile?.id) return;
+    if (!profile?.id || saving) return;
+
+    setSaving(true);
+    setMessage("");
 
     const supabase = getSupabaseBrowserClient();
     const allowAdminReview = history && queryReviewConsent;
@@ -38,6 +82,13 @@ export default function SettingsPage() {
         country_code: countryCode || null,
         history_enabled: history,
         query_review_consent: allowAdminReview,
+        learning_preferences: {
+          tts_voice: ttsVoice,
+          audio_speed: audioSpeed,
+          pronunciation_speed: pronunciationSpeed,
+          microphone_language: microphoneLanguage,
+          auto_translate: autoTranslate,
+        },
       })
       .eq("id", profile.id);
 
@@ -49,6 +100,7 @@ export default function SettingsPage() {
 
       if (historyError) {
         setMessage(historyError.message);
+        setSaving(false);
         return;
       }
     }
@@ -58,15 +110,19 @@ export default function SettingsPage() {
     if (!error) {
       await refreshProfile();
     }
+
+    setSaving(false);
   }
 
   return (
     <ProtectedRoute>
       <DashboardShell
         title="Account settings"
-        description="Control your profile and translation history privacy."
+        description="Control your profile, learning preferences and translation history privacy."
       >
         <form className="dashboard-card form-grid" onSubmit={save}>
+          <h2>Profile</h2>
+
           <label>
             Display name
             <input
@@ -83,6 +139,97 @@ export default function SettingsPage() {
               allowEmpty
               emptyLabel="Not set"
             />
+          </div>
+
+          <hr />
+
+          <div>
+            <h2>Audio & learning</h2>
+            <p className="form-help">
+              These preferences are saved to your account and will be used
+              across supported learning tools.
+            </p>
+          </div>
+
+          <label>
+            AI voice
+            <select
+              value={ttsVoice}
+              onChange={(event) =>
+                setTtsVoice(
+                  event.target.value === "cedar" ? "cedar" : "marin",
+                )
+              }
+            >
+              <option value="marin">Marin</option>
+              <option value="cedar">Cedar</option>
+            </select>
+          </label>
+
+          <label>
+            Audio playback speed
+            <select
+              value={audioSpeed}
+              onChange={(event) =>
+                setAudioSpeed(
+                  Number(event.target.value) as LearningPlaybackSpeed,
+                )
+              }
+            >
+              {PLAYBACK_SPEED_OPTIONS.map((speed) => (
+                <option key={speed} value={speed}>
+                  {speed}x
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label>
+            Pronunciation playback speed
+            <select
+              value={pronunciationSpeed}
+              onChange={(event) =>
+                setPronunciationSpeed(
+                  Number(event.target.value) as LearningPlaybackSpeed,
+                )
+              }
+            >
+              {PLAYBACK_SPEED_OPTIONS.map((speed) => (
+                <option key={speed} value={speed}>
+                  {speed}x
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label>
+            Default microphone language
+            <select
+              value={microphoneLanguage}
+              onChange={(event) =>
+                setMicrophoneLanguage(
+                  event.target.value === "en" ? "en" : "hyw",
+                )
+              }
+            >
+              <option value="hyw">Western Armenian</option>
+              <option value="en">English</option>
+            </select>
+          </label>
+
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={autoTranslate}
+              onChange={(event) => setAutoTranslate(event.target.checked)}
+            />
+            <span>Automatically translate while typing when signed in</span>
+          </label>
+
+          <hr />
+
+          <div>
+            <h2>Translation history</h2>
           </div>
 
           <label className="checkbox-label">
@@ -120,8 +267,8 @@ export default function SettingsPage() {
             translations from the administrator query-review area.
           </p>
 
-          <button className="primary-button" type="submit">
-            Save settings
+          <button className="primary-button" type="submit" disabled={saving}>
+            {saving ? "Saving..." : "Save settings"}
           </button>
 
           {message && <p className="form-message">{message}</p>}
