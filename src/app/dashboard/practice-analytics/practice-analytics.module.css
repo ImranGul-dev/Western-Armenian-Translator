@@ -1,0 +1,424 @@
+.page {
+  display: grid;
+  gap: 18px;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.periodControl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.periodButton {
+  min-height: 36px;
+  padding: 7px 13px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--text-soft);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    color 160ms ease;
+}
+
+.periodButton:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.periodButtonActive {
+  border-color: color-mix(in srgb, var(--accent) 46%, var(--border));
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.periodButton:focus-visible,
+.retryButton:focus-visible,
+.practiceLink:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent) 26%, transparent);
+  outline-offset: 2px;
+}
+
+.periodMeta {
+  display: grid;
+  gap: 3px;
+  text-align: right;
+}
+
+.periodMeta strong {
+  font-size: 13px;
+}
+
+.periodMeta span {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.metricCard {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 132px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.metricLabel {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.metricValue {
+  overflow-wrap: anywhere;
+  font-size: clamp(26px, 3vw, 36px);
+  line-height: 1;
+  letter-spacing: -0.035em;
+}
+
+.metricHint {
+  margin-top: auto;
+  color: var(--text-soft);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.positive {
+  color: var(--success);
+}
+
+.negative {
+  color: var(--danger);
+}
+
+.analyticsGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(280px, 0.85fr);
+  gap: 14px;
+}
+
+.card {
+  min-width: 0;
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.cardHeader h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.cardHeader p {
+  margin: 5px 0 0;
+  color: var(--text-soft);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.cardBadge {
+  flex: 0 0 auto;
+  padding: 5px 9px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.activityViewport {
+  overflow-x: auto;
+  padding: 2px 0 4px;
+}
+
+.activityChart {
+  min-width: 520px;
+  height: 220px;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  padding: 18px 12px 10px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background:
+    linear-gradient(
+      to top,
+      color-mix(in srgb, var(--border) 45%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 100% 25%;
+}
+
+.activityBarWrap {
+  min-width: 5px;
+  height: 100%;
+  flex: 1 1 0;
+  display: flex;
+  align-items: flex-end;
+}
+
+.activityBar {
+  width: 100%;
+  min-height: 3px;
+  border-radius: 4px 4px 2px 2px;
+  background: var(--accent);
+}
+
+.activityBarZero {
+  background: color-mix(in srgb, var(--border-strong) 65%, transparent);
+}
+
+.chartFooter {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.emptyState {
+  min-height: 220px;
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  padding: 28px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 9px;
+  background: var(--surface-soft);
+  text-align: center;
+}
+
+.emptyState strong {
+  font-size: 15px;
+}
+
+.emptyState p {
+  max-width: 430px;
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.practiceLink {
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.practiceLink:hover {
+  text-decoration: underline;
+}
+
+.ratingList {
+  display: grid;
+  gap: 14px;
+}
+
+.ratingRow {
+  display: grid;
+  gap: 7px;
+}
+
+.ratingMeta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ratingMeta strong {
+  font-size: 13px;
+}
+
+.ratingMeta span {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ratingTrack {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--surface-soft);
+}
+
+.ratingFill {
+  height: 100%;
+  min-width: 0;
+  border-radius: inherit;
+  background: var(--accent);
+}
+
+.ratingAgain {
+  background: var(--danger);
+}
+
+.ratingHard {
+  background: var(--accent);
+}
+
+.ratingGood,
+.ratingEasy {
+  background: var(--success);
+}
+
+.ratingNote {
+  margin: 2px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  color: var(--text-soft);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.stateCard {
+  min-height: 220px;
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  padding: 28px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  text-align: center;
+}
+
+.stateCard strong {
+  font-size: 16px;
+}
+
+.stateCard p {
+  max-width: 520px;
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.errorCard {
+  border-color: color-mix(in srgb, var(--danger) 30%, var(--border));
+  background: var(--danger-soft);
+}
+
+.errorCard strong,
+.errorCard p {
+  color: var(--danger);
+}
+
+.retryButton {
+  min-height: 36px;
+  padding: 7px 14px;
+  border: 1px solid color-mix(in srgb, var(--danger) 32%, var(--border));
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--danger);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.lockedCard {
+  min-height: 240px;
+}
+
+.lockedCard a {
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.lockedCard a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 1080px) {
+  .metricsGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .analyticsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .toolbar,
+  .cardHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .periodMeta {
+    text-align: left;
+  }
+
+  .metricsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .activityChart {
+    min-width: 480px;
+  }
+}
+
+@media (max-width: 480px) {
+  .metricsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .periodControl {
+    width: 100%;
+  }
+
+  .periodButton {
+    flex: 1 1 0;
+  }
+
+  .card,
+  .toolbar,
+  .metricCard,
+  .stateCard {
+    padding: 16px;
+  }
+}
