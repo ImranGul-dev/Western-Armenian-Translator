@@ -40,6 +40,14 @@ const ADMIN_ITEMS = [
       "Save an approved translation of 'How are you?' so it can be used as a quality reference for similar translations.",
   },
   {
+    href: "/admin/daily-practice",
+    label: "Daily Practice",
+    description:
+      "Schedule and manage the Western Armenian phrase learners see for each calendar day. Use drafts for unfinished content, publish only reviewed phrases, and archive old entries rather than deleting them.",
+    example:
+      "Create tomorrow's phrase with its English meaning and a short teaching note, review the learner preview, then publish it.",
+  },
+  {
     href: "/admin/role-play",
     label: "Role-Play",
     description:
