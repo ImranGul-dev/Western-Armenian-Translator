@@ -1,0 +1,116 @@
+.thesaurus-language-toggle {
+  display: inline-flex;
+  width: fit-content;
+  margin-bottom: 18px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-soft);
+}
+
+.thesaurus-language-toggle button {
+  min-height: 36px;
+  padding: 7px 12px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.thesaurus-language-toggle button.active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.thesaurus-result-item {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
+}
+
+.thesaurus-result-copy {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.thesaurus-result-meaning,
+.thesaurus-query-meaning {
+  color: var(--text-soft);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.thesaurus-result-meaning::before {
+  content: "Meaning: ";
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.thesaurus-query-meaning {
+  padding-left: 10px;
+  border-left: 1px solid var(--border);
+}
+
+.thesaurus-save-button {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border: 1px solid var(--border-strong);
+  border-radius: 7px;
+  background: var(--surface-soft);
+  color: var(--text-soft);
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.thesaurus-save-button:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent-text);
+  background: var(--accent-soft);
+}
+
+.thesaurus-save-button-saved {
+  border-color: color-mix(in srgb, var(--success) 38%, var(--border));
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.thesaurus-save-message {
+  border: 1px solid color-mix(in srgb, var(--success) 30%, var(--border));
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+@media (max-width: 680px) {
+  .thesaurus-language-toggle {
+    width: 100%;
+  }
+
+  .thesaurus-language-toggle button {
+    flex: 1;
+  }
+
+  .thesaurus-result-item {
+    grid-template-columns: 1fr;
+  }
+
+  .thesaurus-save-button {
+    width: fit-content;
+  }
+
+  .thesaurus-query-meaning {
+    width: 100%;
+    padding-left: 0;
+    border-left: 0;
+  }
+}
