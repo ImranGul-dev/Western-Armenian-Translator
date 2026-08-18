@@ -27,6 +27,10 @@ import {
 } from "@/lib/languages";
 
 import {
+  normalizeLearningPreferences,
+} from "@/lib/learning-preferences";
+
+import {
   FALLBACK_PUBLIC_TRANSLATION_SETTINGS,
   maxCharactersFor,
   type PublicTranslationSettings,
@@ -103,6 +107,11 @@ export function Translator() {
     profile,
     plan,
   } = useAuth();
+
+  const learningPreferences =
+    normalizeLearningPreferences(
+      profile?.learning_preferences,
+    );
 
   const [
     sourceLanguage,
@@ -204,7 +213,7 @@ export function Translator() {
    * Realtime-style automatic translation.
    *
    * 180 ms keeps the paid/logged-in experience
-   * very responsive.
+   * very responsive when the user's saved preference is enabled.
    */
   const debouncedText =
     useDebouncedValue(
@@ -326,10 +335,6 @@ export function Translator() {
     }
   }, []);
 
-  /*
-   * If a guest signs in without the component
-   * remounting, remove the guest-only counter.
-   */
   useEffect(() => {
     if (profile) {
       setGuestUsage(null);
@@ -388,16 +393,6 @@ export function Translator() {
       ) => {
         let text = inputText;
 
-        /*
-         * Western Armenian may be entered phonetically with
-         * Latin characters.
-         *
-         * Never send that raw Latin text to the translation
-         * backend as though it were already Armenian script.
-         * Convert it first, update the visible source box,
-         * and continue the normal translation request with
-         * the converted Armenian text.
-         */
         if (
           sourceLanguage === "hyw" &&
           hasLatinWesternArmenianInput(
@@ -446,14 +441,6 @@ export function Translator() {
           return;
         }
 
-        /*
-         * Once a guest has definitely reached
-         * five translations, do not keep sending
-         * extra requests from the browser.
-         *
-         * The backend still remains the real
-         * security/source-of-truth check.
-         */
         if (
           !profile &&
           guestLimitReached
@@ -497,14 +484,6 @@ export function Translator() {
           return;
         }
 
-        /*
-         * Cancel any previous translation stream.
-         *
-         * This is important for realtime
-         * translation: old OpenAI output must
-         * never overwrite translation for newly
-         * typed text.
-         */
         abortRef.current?.abort();
 
         const controller =
@@ -522,12 +501,6 @@ export function Translator() {
         setLoading(true);
         setError("");
         setUpgrade(false);
-
-        /*
-         * Clear the previous completed result so
-         * the new streamed response can appear
-         * immediately.
-         */
         setTranslation("");
         setRequestId("");
 
@@ -539,17 +512,8 @@ export function Translator() {
                 sourceLanguage,
                 targetLanguage,
               },
-
               controller.signal,
-
               session?.access_token,
-
-              /*
-               * Streaming callback.
-               *
-               * This is called repeatedly as
-               * OpenAI translation deltas arrive.
-               */
               (
                 partialTranslation,
               ) => {
@@ -590,11 +554,6 @@ export function Translator() {
             data.usage ?? null,
           );
 
-          /*
-           * Guests receive their successful
-           * daily translation count from the
-           * backend.
-           */
           if (!profile) {
             setGuestUsage(
               data.guestUsage ??
@@ -611,25 +570,12 @@ export function Translator() {
             return;
           }
 
-          /*
-           * A partial streamed translation must
-           * not remain on screen if the request
-           * ultimately fails.
-           */
           setTranslation("");
           setRequestId("");
 
           const failure =
             cause as TranslationApiError;
 
-          /*
-           * The backend also returns guestUsage
-           * when the sixth request is blocked.
-           *
-           * This makes sure the interface still
-           * shows "5 of 5" instead of losing the
-           * counter on an error.
-           */
           if (
             !profile &&
             failure.guestUsage
@@ -683,15 +629,6 @@ export function Translator() {
       ],
     );
 
-  /*
-   * Logged-in users keep realtime automatic
-   * translation while typing.
-   *
-   * Guests use the Translate button, Enter,
-   * or Paste so normal typing pauses do not
-   * accidentally consume several of their five
-   * daily translations.
-   */
   useEffect(() => {
     const latinWesternArmenianPending =
       sourceLanguage === "hyw" &&
@@ -699,12 +636,6 @@ export function Translator() {
         sourceText,
       );
 
-    /*
-     * When Western Armenian is selected and the user is
-     * typing phonetically in Latin characters, wait for
-     * conversion instead of treating the Latin text as
-     * Armenian and sending it to GPT.
-     */
     if (
       latinWesternArmenianPending
     ) {
@@ -715,6 +646,7 @@ export function Translator() {
 
     if (
       profile &&
+      learningPreferences.auto_translate &&
       !speechActive &&
       debouncedText === sourceText
     ) {
@@ -729,13 +661,10 @@ export function Translator() {
     targetLanguage,
     translate,
     profile,
+    learningPreferences.auto_translate,
     speechActive,
   ]);
 
-  /*
-   * Abort an active stream when the component
-   * leaves the page.
-   */
   useEffect(
     () => () => {
       abortRef.current?.abort();
@@ -808,10 +737,6 @@ export function Translator() {
   function textChange(
     value: string,
   ) {
-    /*
-     * Immediately stop the previous stream when
-     * another character is typed.
-     */
     cancel();
 
     last.current = "";
@@ -854,15 +779,6 @@ export function Translator() {
       return;
     }
 
-    /*
-     * Use the existing source-text update path so conversion
-     * cancels any stale translation stream and preserves the
-     * normal character-limit/error behavior.
-     *
-     * Logged-in automatic translation will then react to the
-     * converted Armenian text through the existing debounce.
-     * Guests can press Enter or Translate as usual.
-     */
     textChange(converted);
   }
 
@@ -989,10 +905,8 @@ export function Translator() {
             sourceText,
             translatedText:
               translation,
-
             sourceLanguage,
             targetLanguage,
-
             isFavorite:
               favourite,
           },
@@ -1000,10 +914,8 @@ export function Translator() {
 
       setSavedPhraseState({
         signature,
-
         id:
           saved.item.id,
-
         isFavorite:
           saved.item.isFavorite,
       });
@@ -1011,7 +923,6 @@ export function Translator() {
       setSavedPhraseFeedback({
         tone:
           "success",
-
         text:
           saved.item.isFavorite
             ? "Saved in Favourites."
@@ -1023,7 +934,6 @@ export function Translator() {
       setSavedPhraseFeedback({
         tone:
           "error",
-
         text:
           cause instanceof Error
             ? cause.message
@@ -1076,10 +986,8 @@ export function Translator() {
       setSavedPhraseState({
         signature:
           currentSavedPhraseSignature,
-
         id:
           updated.id,
-
         isFavorite:
           updated.isFavorite,
       });
@@ -1087,7 +995,6 @@ export function Translator() {
       setSavedPhraseFeedback({
         tone:
           "success",
-
         text:
           "Removed from Favourites. The translation is still saved.",
       });
@@ -1095,7 +1002,6 @@ export function Translator() {
       setSavedPhraseFeedback({
         tone:
           "error",
-
         text:
           cause instanceof Error
             ? cause.message
@@ -1162,33 +1068,28 @@ export function Translator() {
             mode="input"
             languageLabel="Translate from"
             languageId="source-language"
-            language={
-              sourceLanguage
-            }
+            language={sourceLanguage}
             languageOptions={[
               "en",
               "hyw",
               "hye",
             ]}
-            onLanguageChange={
-              sourceChange
-            }
+            onLanguageChange={sourceChange}
             value={sourceText}
             onChange={textChange}
             onKeyDown={keyDown}
             onClear={() => {
               reset();
-
               setSourceText("");
               setTranslation("");
             }}
             onPaste={paste}
-            maxCharacters={
-              maxCharacters
-            }
+            maxCharacters={maxCharacters}
             keyboardHint={
               profile
-                ? "Automatic translation while typing"
+                ? learningPreferences.auto_translate
+                  ? "Automatic translation while typing"
+                  : "Automatic translation is off - use Translate"
                 : "Enter to translate - Shift + Enter for new line"
             }
             mobileFooterAction={
@@ -1215,7 +1116,7 @@ export function Translator() {
                     : "Translate"}
               </button>
             }
-          panelActions={
+            panelActions={
               <>
                 {sourceLanguage ===
                   "hyw" &&
@@ -1225,20 +1126,13 @@ export function Translator() {
                   <button
                     type="button"
                     className="panel-action"
-                    disabled={
-                      loading
-                    }
-                    onClick={
-                      convertLatinInput
-                    }
+                    disabled={loading}
+                    onClick={convertLatinInput}
                     title="Convert phonetic Latin typing to Western Armenian script"
                   >
-                    <span
-                      aria-hidden="true"
-                    >
+                    <span aria-hidden="true">
                       {"Ա"}
                     </span>
-
                     <span>
                       Latin → Armenian
                     </span>
@@ -1246,42 +1140,19 @@ export function Translator() {
                 ) : null}
 
                 <SpeechToTextButton
-                  language={
-                    sourceLanguage
-                  }
-                  currentText={
-                    sourceText
-                  }
-                  maxCharacters={
-                    maxCharacters
-                  }
-                  disabled={
-                    loading
-                  }
-                  onListeningChange={
-                    setSpeechActive
-                  }
+                  language={sourceLanguage}
+                  currentText={sourceText}
+                  maxCharacters={maxCharacters}
+                  disabled={loading}
+                  onListeningChange={setSpeechActive}
                   onTranscript={(
                     spokenText,
                     final,
                   ) => {
-                    /*
-                     * Update the source box while
-                     * realtime transcription arrives.
-                     */
                     textChange(
                       spokenText,
                     );
 
-                    /*
-                     * Logged-in users normally
-                     * auto-translate while typing.
-                     *
-                     * During microphone input we wait
-                     * until OpenAI marks the speech
-                     * turn complete so partial words
-                     * do not repeatedly call GPT-5.4.
-                     */
                     if (
                       final &&
                       profile &&
@@ -1316,22 +1187,16 @@ export function Translator() {
             mode="output"
             languageLabel="Translate to"
             languageId="target-language"
-            language={
-              targetLanguage
-            }
+            language={targetLanguage}
             languageOptions={
               getTargetsForSource(
                 sourceLanguage,
               )
             }
-            onLanguageChange={
-              targetChange
-            }
+            onLanguageChange={targetChange}
             value={translation}
             loading={loading}
-            transliteration={
-              transliteration
-            }
+            transliteration={transliteration}
             secondaryActions={
               translation ? (
                 <>
@@ -1396,8 +1261,7 @@ export function Translator() {
                     />
                   </div>
 
-                  {targetLanguage ===
-                    "hyw" ? (
+                  {targetLanguage === "hyw" ? (
                     <div className="output-action-group output-learning-actions">
                       <span className="output-action-group-label">
                         Learning tools
@@ -1456,11 +1320,7 @@ export function Translator() {
           <StatusMessage
             loading={loading}
             error={error}
-            hasTranslation={
-              Boolean(
-                translation,
-              )
-            }
+            hasTranslation={Boolean(translation)}
             onRetry={() =>
               void translate(
                 sourceText,
@@ -1507,13 +1367,10 @@ export function Translator() {
               <Link href="/signup?next=%2Fpricing">
                 Create an account
               </Link>
-
               {" or "}
-
               <Link href="/login">
                 log in
               </Link>
-
               {" to continue"}
             </>
           )}
@@ -1644,21 +1501,11 @@ export function Translator() {
       {requestId &&
         translation && (
           <TranslationFeedback
-            requestId={
-              requestId
-            }
-            sourceText={
-              sourceText
-            }
-            translation={
-              translation
-            }
-            sourceLanguage={
-              sourceLanguage
-            }
-            targetLanguage={
-              targetLanguage
-            }
+            requestId={requestId}
+            sourceText={sourceText}
+            translation={translation}
+            sourceLanguage={sourceLanguage}
+            targetLanguage={targetLanguage}
           />
         )}
     </>
