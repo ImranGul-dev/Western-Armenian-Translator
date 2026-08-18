@@ -10,6 +10,10 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 
 import {
+  normalizeLearningPreferences,
+} from "@/lib/learning-preferences";
+
+import {
   hasPaidFeatureAccess,
 } from "@/lib/paid-feature-access";
 
@@ -76,6 +80,23 @@ export function VoiceListenButton({
     loading: authLoading,
   } = useAuth();
 
+  const learningPreferences =
+    normalizeLearningPreferences(
+      profile?.learning_preferences,
+    );
+
+  const preferredSpeed: VoiceSpeed =
+    profile
+      ? mode === "pronunciation"
+        ? learningPreferences.pronunciation_speed
+        : learningPreferences.audio_speed
+      : defaultSpeed;
+
+  const preferredVoice =
+    profile
+      ? learningPreferences.tts_voice
+      : "marin";
+
   const [
     state,
     setState,
@@ -87,7 +108,7 @@ export function VoiceListenButton({
     speed,
     setSpeed,
   ] = useState<VoiceSpeed>(
-    defaultSpeed,
+    preferredSpeed,
   );
 
   const [
@@ -160,6 +181,12 @@ export function VoiceListenButton({
 
     setState("idle");
   }
+
+  useEffect(() => {
+    setSpeed(
+      preferredSpeed,
+    );
+  }, [preferredSpeed]);
 
   useEffect(() => {
     return () => {
@@ -283,7 +310,7 @@ export function VoiceListenButton({
                 language,
                 mode,
                 voice:
-                  "marin",
+                  preferredVoice,
                 speed,
               }),
 
