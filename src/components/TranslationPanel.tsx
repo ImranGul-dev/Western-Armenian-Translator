@@ -28,6 +28,8 @@ import {
   type LanguageCode,
 } from "@/lib/languages";
 
+import styles from "./TranslationPanel.module.css";
+
 interface BasePanelProps {
   languageLabel: string;
   languageId: string;
@@ -233,56 +235,58 @@ export function TranslationPanel(
             props.loading
           }
         >
-          <div
-            className={`translation-output ${
-              armenian
-                ? "armenian-text"
-                : ""
-            }`}
-            role="region"
-            aria-label="Translation result"
-            aria-live="polite"
-          >
-            {props.value || (
-              <span className="output-placeholder">
-                Your translation will appear here.
-              </span>
-            )}
-          </div>
-
-          {props.language ===
-            "hyw" &&
-          props.transliteration ? (
+          <div className={styles.outputTextStack}>
             <div
-              className="transliteration-block"
+              className={`translation-output ${styles.outputText} ${
+                armenian
+                  ? "armenian-text"
+                  : ""
+              }`}
+              role="region"
+              aria-label="Translation result"
               aria-live="polite"
             >
-              <div className="transliteration-heading-row">
-                <span className="transliteration-label">
-                  Latin transliteration
+              {props.value || (
+                <span className="output-placeholder">
+                  Your translation will appear here.
                 </span>
-
-                <VoiceListenButton
-                  text={props.transliteration}
-                  language="hyw"
-                  mode="pronunciation"
-                  defaultSpeed={0.75}
-                  disabled={
-                    props.loading ||
-                    !props.transliteration
-                  }
-                  label="Pronunciation"
-                  compact
-                />
-              </div>
-
-              <span className="transliteration-text">
-                {
-                  props.transliteration
-                }
-              </span>
+              )}
             </div>
-          ) : null}
+
+            {props.language ===
+              "hyw" &&
+            props.transliteration ? (
+              <div
+                className={styles.inlineTransliteration}
+                aria-live="polite"
+              >
+                <div className={styles.inlineHeading}>
+                  <span className={styles.inlineLabel}>
+                    Latin transliteration
+                  </span>
+
+                  <VoiceListenButton
+                    text={props.transliteration}
+                    language="hyw"
+                    mode="pronunciation"
+                    defaultSpeed={0.75}
+                    disabled={
+                      props.loading ||
+                      !props.transliteration
+                    }
+                    label="Pronunciation"
+                    compact
+                  />
+                </div>
+
+                <span className={styles.inlineText}>
+                  {
+                    props.transliteration
+                  }
+                </span>
+              </div>
+            ) : null}
+          </div>
 
           <GrammarTooltipPanel
             text={props.value}
