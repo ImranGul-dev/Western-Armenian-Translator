@@ -75,7 +75,7 @@ function naturalInstructions(
 }
 
 function pronunciationInstructions() {
-  return "The supplied text is a Latin-script phonetic transliteration of Western Armenian. Pronounce it as Western Armenian phonetics, not as ordinary English words. Do not spell the individual letters. Speak slowly, carefully, and clearly for a learner practising pronunciation. Preserve the supplied words and sequence exactly. Do not translate, rewrite, explain, add, or remove anything.";
+  return "The supplied text is a Latin-script phonetic transliteration of Western Armenian. Pronounce it as Western Armenian phonetics, not as ordinary English words. Important pronunciation guidance: the standalone word 'yes' represents Armenian ես at the beginning of a sentence; the standalone word 'es' represents ես when it occurs later in the same sentence. Initial 'ye' represents Armenian ե at the beginning of an ordinary word, while 'e' represents ե elsewhere in a word. Initial 'vo' represents Armenian ո at the beginning of a word, while 'o' represents ո elsewhere in a word. Do not apply the initial ye rule to the standalone word es/yes beyond the explicit ես rule. Do not spell individual letters. Speak slowly, carefully, and clearly for a learner practising pronunciation. Preserve the supplied words and sequence exactly. Do not translate, rewrite, explain, add, or remove anything.";
 }
 
 export default {
