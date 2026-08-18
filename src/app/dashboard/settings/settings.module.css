@@ -1,0 +1,51 @@
+.settingsSelect {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 38px 10px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background-color: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+  cursor: pointer;
+  color-scheme: light;
+  transition:
+    border-color 140ms ease,
+    background-color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.settingsSelect:hover {
+  border-color: color-mix(in srgb, var(--accent) 48%, var(--border-strong));
+  background-color: var(--surface-soft);
+}
+
+.settingsSelect:focus,
+.settingsSelect:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--focus);
+}
+
+.settingsSelect option {
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 700;
+}
+
+:global(html.dark) .settingsSelect {
+  color-scheme: dark;
+  background-color: var(--surface-soft);
+}
+
+:global(html.dark) .settingsSelect:hover {
+  background-color: var(--surface-warm);
+}
+
+:global(html.dark) .settingsSelect option {
+  background: #211f1e;
+  color: #f8f6f4;
+}
