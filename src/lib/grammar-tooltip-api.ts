@@ -29,6 +29,31 @@ interface GrammarTooltipRow {
 }
 
 
+function mapRow(
+  row: GrammarTooltipRow,
+): GrammarTooltip {
+  return {
+    ruleId:
+      row.rule_id,
+    title:
+      row.title,
+    explanation:
+      row.explanation,
+    example:
+      row.example,
+    ruleCategory:
+      row.rule_category,
+    matchedTrigger:
+      row.matched_trigger,
+    priority:
+      Number(
+        row.priority ??
+          100,
+      ),
+  };
+}
+
+
 export async function loadGrammarTooltips(
   text: string,
   sourceLanguage: LanguageCode,
@@ -69,25 +94,73 @@ export async function loadGrammarTooltips(
       data ??
       []
     ) as GrammarTooltipRow[]
-  ).map(
-    (row) => ({
-      ruleId:
-        row.rule_id,
-      title:
-        row.title,
-      explanation:
-        row.explanation,
-      example:
-        row.example,
-      ruleCategory:
-        row.rule_category,
-      matchedTrigger:
-        row.matched_trigger,
-      priority:
-        Number(
-          row.priority ??
-            100,
+  ).map(mapRow);
+}
+
+
+export async function loadGrammarTooltipsForTarget(
+  text: string,
+  targetLanguage: LanguageCode,
+  limit = 8,
+): Promise<GrammarTooltip[]> {
+  if (!text.trim()) {
+    return [];
+  }
+
+  const sourceLanguages:
+    LanguageCode[] =
+      targetLanguage === "hyw"
+        ? ["en", "hye"]
+        : targetLanguage === "en"
+          ? ["hyw"]
+          : [];
+
+  if (!sourceLanguages.length) {
+    return [];
+  }
+
+  const results =
+    await Promise.all(
+      sourceLanguages.map(
+        (sourceLanguage) =>
+          loadGrammarTooltips(
+            text,
+            sourceLanguage,
+            targetLanguage,
+            limit,
+          ),
+      ),
+    );
+
+  const seen =
+    new Set<string>();
+
+  return results
+    .flat()
+    .sort(
+      (left, right) =>
+        left.priority -
+          right.priority ||
+        right.matchedTrigger.length -
+          left.matchedTrigger.length ||
+        left.title.localeCompare(
+          right.title,
         ),
-    }),
-  );
+    )
+    .filter((tooltip) => {
+      const key =
+        [
+          tooltip.title,
+          tooltip.explanation,
+          tooltip.matchedTrigger,
+        ].join("\0");
+
+      if (seen.has(key)) {
+        return false;
+      }
+
+      seen.add(key);
+      return true;
+    })
+    .slice(0, limit);
 }
