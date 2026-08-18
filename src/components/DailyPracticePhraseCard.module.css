@@ -1,0 +1,252 @@
+.card {
+  display: grid;
+  gap: 18px;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--accent-soft) 46%, transparent),
+      transparent 48%
+    ),
+    var(--surface);
+}
+
+.heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.headingCopy {
+  display: grid;
+  gap: 5px;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.heading h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 21px;
+}
+
+.heading p {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.dateBadge {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  min-height: 31px;
+  padding: 5px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--text-soft);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(240px, 0.8fr);
+  gap: 18px;
+}
+
+.phrasePanel,
+.learningPanel {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface-soft) 86%, transparent);
+}
+
+.phrasePanel {
+  display: grid;
+  gap: 14px;
+  padding: 20px;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 4px 9px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-soft);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: capitalize;
+}
+
+.armenian {
+  margin: 0;
+  color: var(--text);
+  font-size: clamp(25px, 3.2vw, 36px);
+  font-weight: 800;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.english {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.transliterationBlock {
+  display: grid;
+  gap: 8px;
+  padding-top: 13px;
+  border-top: 1px solid var(--border);
+}
+
+.transliterationHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.transliterationLabel {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.transliteration {
+  color: var(--text-soft);
+  font-size: 14px;
+  font-style: italic;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.audioActions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+  padding-top: 2px;
+}
+
+.learningPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+}
+
+.learningPanel h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.learningPanel p {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.note {
+  padding: 13px 14px;
+  border-left: 3px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+  background: var(--surface);
+}
+
+.noNote {
+  color: var(--text-muted) !important;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.loading,
+.empty,
+.error {
+  min-height: 150px;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 9px;
+  background: var(--surface-soft);
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.loading,
+.empty {
+  color: var(--text-soft);
+}
+
+.error {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--danger) 30%, var(--border));
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+@media (max-width: 860px) {
+  .body {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .card {
+    padding: 18px;
+  }
+
+  .heading,
+  .transliterationHeader,
+  .footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .dateBadge {
+    white-space: normal;
+  }
+
+  .armenian {
+    font-size: 26px;
+  }
+}
