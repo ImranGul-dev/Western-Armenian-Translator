@@ -58,10 +58,9 @@ alter table public.platform_settings
       and jsonb_typeof(value -> 'daily_practice') = 'boolean'
       and jsonb_typeof(value -> 'grammar_tooltips') = 'boolean'
       and jsonb_typeof(value -> 'embeddable_widgets') = 'boolean'
-      and not exists (
-        select 1
-        from jsonb_object_keys(value) as item(toggle_key)
-        where item.toggle_key not in (
+      and (
+        value
+        - array[
           'translation',
           'audio',
           'pronunciation',
@@ -77,8 +76,8 @@ alter table public.platform_settings
           'daily_practice',
           'grammar_tooltips',
           'embeddable_widgets'
-        )
-      )
+        ]::text[]
+      ) = '{}'::jsonb
     )
   );
 
