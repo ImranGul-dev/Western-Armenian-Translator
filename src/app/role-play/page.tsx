@@ -30,6 +30,10 @@ import {
 } from "@/contexts/AuthContext";
 
 import {
+  normalizeLearningPreferences,
+} from "@/lib/learning-preferences";
+
+import {
   hasPaidFeatureAccess,
 } from "@/lib/paid-feature-access";
 
@@ -100,6 +104,11 @@ export default function RolePlayPage() {
     session,
     loading: authLoading,
   } = useAuth();
+
+  const learningPreferences =
+    normalizeLearningPreferences(
+      profile?.learning_preferences,
+    );
 
   const hasAccess =
     hasPaidFeatureAccess(
@@ -221,6 +230,16 @@ export default function RolePlayPage() {
       null,
     );
 
+  useEffect(() => {
+    if (!listening) {
+      setSpeechLanguage(
+        learningPreferences.microphone_language,
+      );
+    }
+  }, [
+    learningPreferences.microphone_language,
+    listening,
+  ]);
 
   useEffect(() => {
     if (
