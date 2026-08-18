@@ -39,6 +39,8 @@ import {
   transliterateWesternArmenian,
 } from "@/lib/western-armenian-transliteration";
 
+import "./thesaurus-upgrades.css";
+
 function ArmenianResult({
   item,
   language,
