@@ -16,6 +16,14 @@ const ADMIN_ITEMS = [
       "If Pending corrections shows 4, open Corrections and review those submissions.",
   },
   {
+    href: "/admin/analytics",
+    label: "Analytics",
+    description:
+      "Use this section to review privacy-safe platform trends, operational health, recent system errors and the administrator audit trail. Translation text is not shown here.",
+    example:
+      "Check the last 30 days to compare translation volume and failure rate, then review the audit log to see who changed a grammar rule or user role.",
+  },
+  {
     href: "/admin/glossary",
     label: "Glossary",
     description:
