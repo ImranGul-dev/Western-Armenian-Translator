@@ -1,3 +1,7 @@
+import type {
+  LearningPreferences,
+} from "@/lib/learning-preferences";
+
 export type ProfileRole = "user" | "language_editor" | "admin";
 export type PlanSlug = "free" | "premium" | "business";
 export type EffectivePlanSlug = PlanSlug | "admin" | "anonymous";
@@ -53,6 +57,7 @@ export interface Profile {
   role: ProfileRole;
   history_enabled: boolean;
   query_review_consent: boolean;
+  learning_preferences: LearningPreferences;
   current_plan_id: string | null;
   last_active_at?: string | null;
   created_at: string;
