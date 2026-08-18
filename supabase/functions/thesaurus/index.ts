@@ -25,14 +25,26 @@ import {
   hasPaidFeatureAccess,
 } from "../_shared/paid-feature-access.ts";
 
+type ThesaurusLanguage =
+  | "hyw"
+  | "hye";
+
 interface ThesaurusRequest {
   text?: unknown;
+  language?: unknown;
+}
+
+interface ThesaurusItem {
+  text: string;
+  meaning: string;
 }
 
 interface ThesaurusResult {
-  synonyms: string[];
-  antonyms: string[];
-  alternatives: string[];
+  input: string;
+  inputMeaning: string;
+  synonyms: ThesaurusItem[];
+  antonyms: ThesaurusItem[];
+  alternatives: ThesaurusItem[];
 }
 
 function json(
@@ -98,9 +110,43 @@ function reasoningForModel(
   return undefined;
 }
 
+function cleanItem(
+  value: unknown,
+): ThesaurusItem | null {
+  if (
+    !value ||
+    typeof value !== "object" ||
+    Array.isArray(value)
+  ) {
+    return null;
+  }
+
+  const raw =
+    value as Record<string, unknown>;
+
+  const text =
+    typeof raw.text === "string"
+      ? raw.text.trim()
+      : "";
+
+  const meaning =
+    typeof raw.meaning === "string"
+      ? raw.meaning.trim()
+      : "";
+
+  if (!text) {
+    return null;
+  }
+
+  return {
+    text,
+    meaning,
+  };
+}
+
 function cleanList(
   value: unknown,
-): string[] {
+): ThesaurusItem[] {
   if (!Array.isArray(value)) {
     return [];
   }
@@ -108,22 +154,19 @@ function cleanList(
   const seen =
     new Set<string>();
 
-  const items: string[] = [];
+  const items:
+    ThesaurusItem[] = [];
 
   for (const raw of value) {
-    if (typeof raw !== "string") {
-      continue;
-    }
-
     const item =
-      raw.trim();
+      cleanItem(raw);
 
     if (!item) {
       continue;
     }
 
     const key =
-      item.toLocaleLowerCase();
+      item.text.toLocaleLowerCase();
 
     if (seen.has(key)) {
       continue;
@@ -160,6 +203,16 @@ function parseResult(
       Record<string, unknown>;
 
   return {
+    input:
+      typeof parsed.input === "string"
+        ? parsed.input.trim()
+        : "",
+
+    inputMeaning:
+      typeof parsed.inputMeaning === "string"
+        ? parsed.inputMeaning.trim()
+        : "",
+
     synonyms:
       cleanList(parsed.synonyms),
 
@@ -488,7 +541,7 @@ Deno.serve(
         {
           success: false,
           error:
-            "Please enter a Western Armenian word or phrase.",
+            "Please enter an Armenian or English word or phrase.",
           code:
             "invalid_json",
         },
@@ -503,6 +556,12 @@ Deno.serve(
         ? payload.text.trim()
         : "";
 
+    const language:
+      ThesaurusLanguage =
+      payload.language === "hye"
+        ? "hye"
+        : "hyw";
+
     const characters =
       Array.from(text).length;
 
@@ -516,7 +575,7 @@ Deno.serve(
           error:
             characters > 200
               ? "Please keep the word or phrase under 200 characters."
-              : "Please enter a Western Armenian word or phrase.",
+              : "Please enter an Armenian or English word or phrase.",
           code:
             "invalid_text",
         },
@@ -525,39 +584,53 @@ Deno.serve(
       );
     }
 
-    const instructions = `
-You are the Western Armenian Thesaurus for the Tun Western Armenian language platform.
+    const dialectName =
+      language === "hye"
+        ? "Eastern Armenian"
+        : "Western Armenian";
 
-Your job is to analyse the user's Western Armenian word or short phrase and return useful Western Armenian alternatives.
+    const orthographyRule =
+      language === "hye"
+        ? "Use standard modern Eastern Armenian spelling and vocabulary."
+        : "Use traditional Western Armenian orthography and Western Armenian vocabulary.";
+
+    const instructions = `
+You are the ${dialectName} Thesaurus for the Tun Armenian language platform.
+
+The user may enter:
+- Armenian script;
+- Armenian written phonetically with the Latin alphabet;
+- or an English word or short phrase whose Armenian alternatives they want.
+
+First determine the intended everyday meaning. If the input is Latin-script Armenian transliteration, interpret it phonetically as Armenian rather than treating it as an English spelling. If it is clearly ordinary English, translate the concept into ${dialectName} before finding alternatives.
 
 Requirements:
-- Use Western Armenian, not Eastern Armenian.
-- Preserve traditional Western Armenian orthography.
-- Return only vocabulary and phrasing that you are confident is natural and semantically correct in Western Armenian.
-- Never guess. If you are uncertain whether an item is correct, omit it.
-- If a standalone word has several possible meanings and the user gives no context, use only its most common everyday meaning.
-- Do not mix literal, figurative, technical, or context-specific senses in the same result.
-- Synonyms and antonyms must match the same sense and grammatical role as the user's input.
-- A synonym must be naturally substitutable for the input in ordinary usage, not merely related, stronger, weaker, larger, taller, more intense, or associated with it.
-- Antonyms must be direct semantic opposites for that same sense. Do not include loosely contrasting or context-dependent words.
-- Never return the user's exact input as one of its own synonyms, antonyms, or alternatives.
-- Synonyms must have the same or a very closely related meaning. Do not include merely associated words.
-- For greetings, expressions, idioms, and short phrases, synonyms must be expressions that can naturally replace the input in the same conversational situation.
-- Antonyms must have a genuine opposite meaning. If there is no natural antonym, return an empty antonyms array.
-- Alternative phrasing must preserve the original communicative meaning and be usable naturally in a similar context.
-- Do not include words simply because they share letters, sounds, roots, or spelling with the input.
-- Do not invent words.
-- Do not include unrelated adjectives, nouns, verbs, or expressions.
-- Prefer fewer high-confidence results over filling the list with weak results.
+- ${orthographyRule}
+- Return the normalized Armenian input in the "input" field.
+- Return a short natural English gloss for that input in "inputMeaning".
+- Every synonym, antonym and alternative must include a concise English meaning.
+- Return only vocabulary and phrasing that you are highly confident is natural and semantically correct in ${dialectName}.
+- Never guess. If uncertain, omit the item.
+- If a standalone word has several possible meanings and no context is provided, use its most common everyday meaning.
+- Do not mix literal, figurative, technical or context-specific senses in the same result.
+- Synonyms and antonyms must match the same sense and grammatical role as the normalized Armenian input.
+- A synonym must be naturally substitutable for the input in ordinary usage, not merely associated with it.
+- Antonyms must be direct semantic opposites. If there is no natural antonym, return an empty array.
+- Alternative phrasing must preserve the same communicative meaning.
+- Never return the normalized input itself in any result list.
+- Do not invent Armenian words.
+- Prefer fewer high-confidence results over weak filler.
 - Avoid duplicate or near-duplicate items.
 - Return no more than 5 items in each list.
-- Do not include explanations, English translations, markdown, code fences, transliteration, headings, or commentary.
+- Do not include markdown, code fences, headings, commentary or transliteration in the response.
 
 Return ONLY one valid JSON object in exactly this structure:
 {
-  "synonyms": ["..."],
-  "antonyms": ["..."],
-  "alternatives": ["..."]
+  "input": "normalized Armenian input",
+  "inputMeaning": "short English meaning",
+  "synonyms": [{"text": "Armenian", "meaning": "English meaning"}],
+  "antonyms": [{"text": "Armenian", "meaning": "English meaning"}],
+  "alternatives": [{"text": "Armenian", "meaning": "English meaning"}]
 }
 `.trim();
 
@@ -599,7 +672,7 @@ Return ONLY one valid JSON object in exactly this structure:
           ],
 
           max_output_tokens:
-            1200,
+            1800,
 
           ...(reasoning
             ? {
@@ -640,44 +713,50 @@ Return ONLY one valid JSON object in exactly this structure:
         );
       }
 
+      if (!result.input) {
+        return json(
+          {
+            success: false,
+            error:
+              "The thesaurus could not confidently identify that word or phrase. Please check the spelling or add more context.",
+            code:
+              "unrecognized_input",
+          },
+          422,
+          cors,
+        );
+      }
+
       const validationInstructions = `
-You are the quality-control reviewer for a Western Armenian thesaurus.
+You are the quality-control reviewer for a ${dialectName} thesaurus.
 
-You will receive:
-1. the original Western Armenian input;
-2. candidate synonyms;
-3. candidate antonyms;
-4. candidate alternative phrasings.
-
-Your task is ONLY to remove incorrect, weak, misleading, duplicated, or contextually mismatched candidates.
+You receive the original user input plus a normalized Armenian input and candidate synonym, antonym and alternative objects. Each object contains Armenian text and an English meaning.
 
 Strict rules:
-- Do not add any new words or phrases.
-- Do not rewrite any candidate.
-- Keep an item only if you are highly confident it is correct Western Armenian.
-- Use the most common everyday sense when the original input has no context.
-- Do not mix literal, figurative, technical, or unrelated senses.
-- A synonym must be naturally substitutable for the original in the same sense and grammatical role.
-- Similar intensity alone is not enough to make something a synonym.
-- For example, words meaning tall, strong, powerful, intense, important, or enormous are not automatically synonyms for a word meaning big.
-- An antonym must be a direct semantic opposite of the same sense and grammatical role.
-- Do not keep merely contrasting or context-dependent words as antonyms.
-- Alternative phrasing must preserve the same communicative meaning and be natural Western Armenian.
-- Remove the exact original input if it appears in any candidate list.
-- Prefer an empty or short list instead of a questionable item.
-- Preserve the exact spelling of every candidate you keep.
+- Do not add new candidates.
+- Do not rewrite Armenian candidate text.
+- You may correct or shorten an English meaning only when needed for accuracy.
+- Keep an item only if you are highly confident it is correct ${dialectName} for the same intended sense and grammatical role.
+- ${orthographyRule}
+- Remove the normalized input if it appears in any candidate list.
+- Remove weak, misleading, duplicated, Eastern/Western-dialect-mismatched or contextually unrelated candidates.
+- Prefer an empty or short list over questionable results.
+- Preserve the normalized Armenian input and its English meaning.
 
-Return ONLY one valid JSON object:
+Return ONLY one valid JSON object with this exact structure:
 {
-  "synonyms": ["only retained candidates"],
-  "antonyms": ["only retained candidates"],
-  "alternatives": ["only retained candidates"]
+  "input": "normalized Armenian input",
+  "inputMeaning": "short English meaning",
+  "synonyms": [{"text": "retained Armenian", "meaning": "English meaning"}],
+  "antonyms": [{"text": "retained Armenian", "meaning": "English meaning"}],
+  "alternatives": [{"text": "retained Armenian", "meaning": "English meaning"}]
 }
 `.trim();
 
       const validationPayload =
         JSON.stringify({
-          input: text,
+          originalInput: text,
+          language,
           candidates: result,
         });
 
@@ -703,7 +782,7 @@ Return ONLY one valid JSON object:
           ],
 
           max_output_tokens:
-            1000,
+            1600,
 
           ...(reasoning
             ? {
@@ -748,16 +827,16 @@ Return ONLY one valid JSON object:
       }
 
       const normalizedInput =
-        text
+        validated.input
           .trim()
           .toLocaleLowerCase();
 
       const removeInput = (
-        items: string[],
+        items: ThesaurusItem[],
       ) =>
         items.filter(
           (item) =>
-            item
+            item.text
               .trim()
               .toLocaleLowerCase() !==
             normalizedInput,
@@ -786,9 +865,18 @@ Return ONLY one valid JSON object:
               user.id,
             input_text:
               text,
-            synonyms,
-            antonyms,
-            alternatives,
+            synonyms:
+              synonyms.map(
+                (item) => item.text,
+              ),
+            antonyms:
+              antonyms.map(
+                (item) => item.text,
+              ),
+            alternatives:
+              alternatives.map(
+                (item) => item.text,
+              ),
           });
 
       if (historyResult.error) {
@@ -801,7 +889,12 @@ Return ONLY one valid JSON object:
       return json(
         {
           success: true,
-          input: text,
+          input:
+            validated.input,
+          inputMeaning:
+            validated.inputMeaning,
+          originalInput: text,
+          language,
           synonyms,
           antonyms,
           alternatives,
