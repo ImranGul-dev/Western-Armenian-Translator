@@ -33,6 +33,9 @@ verify_jwt = false
 [functions.practice-streak]
 verify_jwt = false
 
+[functions.practice-analytics]
+verify_jwt = false
+
 [functions.stripe-checkout]
 verify_jwt = false
 
