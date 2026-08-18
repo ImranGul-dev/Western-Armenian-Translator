@@ -3,6 +3,9 @@
 import type { Session, User } from "@supabase/supabase-js";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import {
+  normalizeLearningPreferences,
+} from "@/lib/learning-preferences";
 import type { EffectivePlan, Profile } from "@/types/database";
 
 interface AuthContextValue {
@@ -43,6 +46,18 @@ function parseEffectivePlan(value: unknown): EffectivePlan | null {
   };
 }
 
+function parseProfile(value: unknown): Profile | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const profile = value as Record<string, unknown>;
+
+  return {
+    ...(profile as unknown as Profile),
+    learning_preferences: normalizeLearningPreferences(
+      profile.learning_preferences,
+    ),
+  };
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -58,16 +73,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const supabase = getSupabaseBrowserClient();
     const [{ data: profileRow, error: profileError }, { data: effectiveRow, error: effectiveError }] = await Promise.all([
-      supabase.from("profiles").select("id,email,display_name,country_code,role,history_enabled,query_review_consent,current_plan_id,last_active_at,created_at,updated_at").eq("id", user.id).maybeSingle(),
+      supabase.from("profiles").select("id,email,display_name,country_code,role,history_enabled,query_review_consent,learning_preferences,current_plan_id,last_active_at,created_at,updated_at").eq("id", user.id).maybeSingle(),
       supabase.rpc("get_my_effective_plan")
     ]);
 
+    const parsedProfile = parseProfile(profileRow);
+
     if (profileError || effectiveError) {
-      setProfile(profileRow ? profileRow as Profile : null);
+      setProfile(parsedProfile);
       setPlan(null);
       return;
     }
-    setProfile(profileRow as Profile);
+    setProfile(parsedProfile);
     setPlan(parseEffectivePlan(effectiveRow));
   }, []);
 
