@@ -2,11 +2,23 @@ import {
   getSupabaseConfig,
 } from "@/lib/supabase/client";
 
+export type ThesaurusLanguage =
+  | "hyw"
+  | "hye";
+
+export interface ThesaurusItem {
+  text: string;
+  meaning: string;
+}
+
 export interface ThesaurusResult {
   input: string;
-  synonyms: string[];
-  antonyms: string[];
-  alternatives: string[];
+  inputMeaning: string;
+  language: ThesaurusLanguage;
+  originalInput: string;
+  synonyms: ThesaurusItem[];
+  antonyms: ThesaurusItem[];
+  alternatives: ThesaurusItem[];
 }
 
 interface ThesaurusSuccessResponse
@@ -74,9 +86,61 @@ function apiError(
   return error;
 }
 
+function normalizeItem(
+  value: unknown,
+): ThesaurusItem | null {
+  if (
+    !value ||
+    typeof value !== "object" ||
+    Array.isArray(value)
+  ) {
+    return null;
+  }
+
+  const item =
+    value as Record<string, unknown>;
+
+  const text =
+    typeof item.text === "string"
+      ? item.text.trim()
+      : "";
+
+  const meaning =
+    typeof item.meaning === "string"
+      ? item.meaning.trim()
+      : "";
+
+  if (!text) {
+    return null;
+  }
+
+  return {
+    text,
+    meaning,
+  };
+}
+
+function normalizeItems(
+  value: unknown,
+): ThesaurusItem[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map(normalizeItem)
+    .filter(
+      (
+        item,
+      ): item is ThesaurusItem =>
+        Boolean(item),
+    );
+}
+
 export async function requestThesaurus(
   text: string,
   accessToken: string,
+  language: ThesaurusLanguage = "hyw",
   signal?: AbortSignal,
 ): Promise<ThesaurusResult> {
   const {
@@ -111,6 +175,7 @@ export async function requestThesaurus(
         body:
           JSON.stringify({
             text,
+            language,
           }),
 
         cache:
@@ -152,15 +217,38 @@ export async function requestThesaurus(
 
   return {
     input:
-      data.input,
+      typeof data.input === "string"
+        ? data.input
+        : text,
+
+    inputMeaning:
+      typeof data.inputMeaning === "string"
+        ? data.inputMeaning
+        : "",
+
+    language:
+      data.language === "hye"
+        ? "hye"
+        : "hyw",
+
+    originalInput:
+      typeof data.originalInput === "string"
+        ? data.originalInput
+        : text,
 
     synonyms:
-      data.synonyms,
+      normalizeItems(
+        data.synonyms,
+      ),
 
     antonyms:
-      data.antonyms,
+      normalizeItems(
+        data.antonyms,
+      ),
 
     alternatives:
-      data.alternatives,
+      normalizeItems(
+        data.alternatives,
+      ),
   };
 }
