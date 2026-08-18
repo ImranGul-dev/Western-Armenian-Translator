@@ -1,0 +1,577 @@
+.pageStack {
+  display: grid;
+  gap: 24px;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.summaryCard {
+  display: grid;
+  gap: 6px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.summaryCard span {
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.summaryCard strong {
+  color: var(--text);
+  font-size: 24px;
+  line-height: 1.1;
+}
+
+.toolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.filters {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.field,
+.fieldWide {
+  display: grid;
+  gap: 7px;
+}
+
+.field {
+  min-width: 180px;
+}
+
+.fieldWide {
+  min-width: min(360px, 100%);
+  flex: 1;
+}
+
+.field label,
+.fieldWide label,
+.formField label {
+  color: var(--text-soft);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.input,
+.select,
+.textarea {
+  width: 100%;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  transition: border-color 140ms ease, box-shadow 140ms ease, background 140ms ease;
+}
+
+.input,
+.select {
+  min-height: 44px;
+  padding: 10px 12px;
+}
+
+.select {
+  cursor: pointer;
+  color-scheme: light;
+}
+
+.textarea {
+  min-height: 108px;
+  padding: 12px;
+  resize: vertical;
+  line-height: 1.55;
+}
+
+.input:hover,
+.select:hover,
+.textarea:hover {
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--border-strong));
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--focus);
+}
+
+.select option {
+  background: var(--surface);
+  color: var(--text);
+}
+
+:global(html.dark) .select {
+  color-scheme: dark;
+  background: var(--surface-soft);
+}
+
+:global(html.dark) .select option {
+  background: #211f1e;
+  color: #f8f6f4;
+}
+
+.editorGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+  gap: 22px;
+}
+
+.editorCard,
+.previewCard,
+.listCard {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.editorCard,
+.previewCard {
+  padding: 20px;
+}
+
+.cardHeading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.cardHeading h2,
+.listHeading h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 19px;
+}
+
+.cardHeading p,
+.listHeading p {
+  margin: 5px 0 0;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.formField {
+  display: grid;
+  gap: 7px;
+}
+
+.formFieldFull {
+  grid-column: 1 / -1;
+}
+
+.checkboxRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 13px 14px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface-soft);
+}
+
+.checkboxRow input {
+  margin-top: 3px;
+  accent-color: var(--accent);
+}
+
+.checkboxCopy {
+  display: grid;
+  gap: 3px;
+}
+
+.checkboxCopy strong {
+  color: var(--text);
+  font-size: 14px;
+}
+
+.checkboxCopy span {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.formActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.primaryButton,
+.secondaryButton,
+.dangerButton,
+.smallButton {
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 120ms ease, opacity 120ms ease, border-color 120ms ease;
+}
+
+.primaryButton:hover:not(:disabled),
+.secondaryButton:hover:not(:disabled),
+.dangerButton:hover:not(:disabled),
+.smallButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled,
+.dangerButton:disabled,
+.smallButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.primaryButton {
+  min-height: 42px;
+  padding: 9px 16px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.secondaryButton {
+  min-height: 42px;
+  padding: 9px 16px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.dangerButton {
+  min-height: 42px;
+  padding: 9px 16px;
+  border: 1px solid var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.previewPhrase {
+  display: grid;
+  gap: 16px;
+}
+
+.previewMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.badge,
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 26px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.badge {
+  border: 1px solid var(--border-strong);
+  background: var(--surface-soft);
+  color: var(--text-soft);
+}
+
+.statusPublished {
+  border: 1px solid color-mix(in srgb, var(--success) 34%, transparent);
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  color: var(--success);
+}
+
+.statusDraft {
+  border: 1px solid var(--border-strong);
+  background: var(--surface-soft);
+  color: var(--text-soft);
+}
+
+.statusArchived {
+  border: 1px solid color-mix(in srgb, var(--danger) 28%, transparent);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.armenianText {
+  margin: 0;
+  color: var(--text);
+  font-size: clamp(22px, 3vw, 30px);
+  font-weight: 800;
+  line-height: 1.6;
+}
+
+.transliteration {
+  margin: -8px 0 0;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-style: italic;
+  line-height: 1.5;
+}
+
+.englishText {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.noteBox {
+  padding: 13px 14px;
+  border-left: 3px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+  background: var(--surface-soft);
+}
+
+.noteBox strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.noteBox p {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.emptyPreview {
+  display: grid;
+  place-items: center;
+  min-height: 260px;
+  padding: 24px;
+  text-align: center;
+  color: var(--text-muted);
+  border: 1px dashed var(--border-strong);
+  border-radius: 10px;
+  background: var(--surface-soft);
+}
+
+.listCard {
+  overflow: hidden;
+}
+
+.listHeading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.count {
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.phraseList {
+  display: grid;
+}
+
+.phraseRow {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: start;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.phraseRow:last-child {
+  border-bottom: 0;
+}
+
+.dateColumn {
+  display: grid;
+  gap: 7px;
+}
+
+.dateColumn strong {
+  color: var(--text);
+  font-size: 14px;
+}
+
+.dateColumn span {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.contentColumn {
+  min-width: 0;
+}
+
+.contentColumn h3 {
+  margin: 0 0 6px;
+  color: var(--text);
+  font-size: 17px;
+  line-height: 1.5;
+}
+
+.contentColumn p {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.rowMeta {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.rowActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+  max-width: 290px;
+}
+
+.smallButton {
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text-soft);
+  font-size: 12px;
+}
+
+.smallButtonAccent {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border-strong));
+  color: var(--accent);
+}
+
+.smallButtonDanger {
+  border-color: color-mix(in srgb, var(--danger) 40%, var(--border-strong));
+  color: var(--danger);
+}
+
+.message,
+.errorMessage,
+.loading,
+.emptyList {
+  padding: 14px 16px;
+  border-radius: 9px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.message {
+  border: 1px solid color-mix(in srgb, var(--success) 30%, var(--border));
+  background: color-mix(in srgb, var(--success) 10%, var(--surface));
+  color: var(--success);
+}
+
+.errorMessage {
+  border: 1px solid color-mix(in srgb, var(--danger) 32%, var(--border));
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.loading,
+.emptyList {
+  margin: 20px;
+  border: 1px dashed var(--border-strong);
+  background: var(--surface-soft);
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.helper {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+@media (max-width: 1080px) {
+  .summaryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .editorGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .phraseRow {
+    grid-template-columns: 130px minmax(0, 1fr);
+  }
+
+  .rowActions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    max-width: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .summaryGrid,
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .formFieldFull {
+    grid-column: auto;
+  }
+
+  .toolbar,
+  .filters,
+  .field,
+  .fieldWide {
+    width: 100%;
+  }
+
+  .field,
+  .fieldWide {
+    min-width: 0;
+  }
+
+  .phraseRow {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .rowActions {
+    grid-column: auto;
+  }
+
+  .listHeading,
+  .cardHeading {
+    flex-direction: column;
+  }
+}
