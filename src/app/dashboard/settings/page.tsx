@@ -14,6 +14,7 @@ import {
   type LearningVoice,
 } from "@/lib/learning-preferences";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import styles from "./settings.module.css";
 
 const PLAYBACK_SPEED_OPTIONS: LearningPlaybackSpeed[] = [
   0.75,
@@ -154,6 +155,7 @@ export default function SettingsPage() {
           <label>
             AI voice
             <select
+              className={styles.settingsSelect}
               value={ttsVoice}
               onChange={(event) =>
                 setTtsVoice(
@@ -169,6 +171,7 @@ export default function SettingsPage() {
           <label>
             Audio playback speed
             <select
+              className={styles.settingsSelect}
               value={audioSpeed}
               onChange={(event) =>
                 setAudioSpeed(
@@ -187,6 +190,7 @@ export default function SettingsPage() {
           <label>
             Pronunciation playback speed
             <select
+              className={styles.settingsSelect}
               value={pronunciationSpeed}
               onChange={(event) =>
                 setPronunciationSpeed(
@@ -205,6 +209,7 @@ export default function SettingsPage() {
           <label>
             Default microphone language
             <select
+              className={styles.settingsSelect}
               value={microphoneLanguage}
               onChange={(event) =>
                 setMicrophoneLanguage(
