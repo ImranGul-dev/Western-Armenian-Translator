@@ -63,7 +63,7 @@ export const SYSTEM_FEATURE_TOGGLE_DEFINITIONS:
       description:
         "Controls the main translation experience. Disable only for maintenance or an operational incident.",
       warning:
-        "Turning off Translation will block the core translator once runtime enforcement is wired.",
+        "Turning off Translation blocks the main translator until this control is enabled again.",
     },
     {
       key: "audio",
