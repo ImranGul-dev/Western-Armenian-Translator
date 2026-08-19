@@ -6,6 +6,10 @@ import {
 } from "react";
 
 import {
+  useSystemFeatureToggles,
+} from "@/contexts/SystemFeatureToggleContext";
+
+import {
   loadGrammarTooltipsForTarget,
   type GrammarTooltip,
 } from "@/lib/grammar-tooltip-api";
@@ -26,6 +30,11 @@ export function GrammarTooltipPanel({
   language: LanguageCode;
   loading?: boolean;
 }) {
+  const {
+    toggles,
+  } =
+    useSystemFeatureToggles();
+
   const [
     tooltips,
     setTooltips,
@@ -44,6 +53,7 @@ export function GrammarTooltipPanel({
 
   useEffect(() => {
     if (
+      !toggles.grammar_tooltips ||
       loading ||
       !text.trim()
     ) {
@@ -99,10 +109,12 @@ export function GrammarTooltipPanel({
     language,
     loading,
     text,
+    toggles.grammar_tooltips,
   ]);
 
 
   if (
+    !toggles.grammar_tooltips ||
     loading ||
     !text.trim()
   ) {
