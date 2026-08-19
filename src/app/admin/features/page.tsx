@@ -15,6 +15,10 @@ import {
 } from "@/components/ProtectedRoute";
 
 import {
+  SYSTEM_FEATURE_TOGGLES_UPDATED_EVENT,
+} from "@/contexts/SystemFeatureToggleContext";
+
+import {
   DEFAULT_SYSTEM_FEATURE_TOGGLES,
   SYSTEM_FEATURE_TOGGLE_DEFINITIONS,
   loadSystemFeatureToggles,
@@ -176,7 +180,7 @@ export default function AdminFeaturesPage() {
     ) {
       const confirmed =
         window.confirm(
-          "Disable the core Translation feature? Once runtime enforcement is wired, users will be unable to translate until this is enabled again.",
+          "Disable the core Translation feature? Users will be unable to open the translator until this is enabled again.",
         );
 
       if (!confirmed) {
@@ -196,9 +200,19 @@ export default function AdminFeaturesPage() {
 
       setSaved(next);
       setDraft(next);
+
+      window.dispatchEvent(
+        new CustomEvent(
+          SYSTEM_FEATURE_TOGGLES_UPDATED_EVENT,
+          {
+            detail: next,
+          },
+        ),
+      );
+
       setTone("success");
       setMessage(
-        "System feature toggles saved. The change has also been recorded in Admin Audit Logs.",
+        "System feature toggles saved and applied. The change has also been recorded in Admin Audit Logs.",
       );
     } catch (cause) {
       setTone("error");
@@ -224,7 +238,7 @@ export default function AdminFeaturesPage() {
             <strong>
               These are global kill switches, not plan controls.
             </strong>{" "}
-            Turning a feature off will eventually make it unavailable even to accounts that normally have access. Turning it on never grants access beyond the user&apos;s existing plan and role.
+            Turning a feature off makes that feature unavailable even to accounts that normally have access. Turning it on never grants access beyond the user&apos;s existing plan and role.
           </div>
 
           {message ? (
