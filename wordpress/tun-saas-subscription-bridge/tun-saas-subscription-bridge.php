@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Tun SaaS Subscription Bridge
  * Description: Carries Tun's short-lived checkout token onto WooCommerce orders and subscriptions so the SaaS account can be linked securely by the signed subscription webhook.
- * Version: 1.0.1
+ * Version: 1.0.2
  * Author: Tun
  */
 
@@ -22,11 +22,23 @@ function tun_saas_clean_checkout_token( $value ) {
     return preg_match( '/^[a-f0-9]{64}$/', $value ) ? $value : '';
 }
 
+function tun_saas_active_checkout_token() {
+    if ( ! function_exists( 'WC' ) || ! WC()->session ) {
+        return '';
+    }
+
+    return tun_saas_clean_checkout_token( WC()->session->get( TUN_SAAS_CHECKOUT_META_KEY ) );
+}
+
+function tun_saas_is_mapped_product( $product_id, $variation_id = 0 ) {
+    $mapped = tun_saas_mapped_product_ids();
+    return in_array( absint( $product_id ), $mapped, true ) ||
+        in_array( absint( $variation_id ), $mapped, true );
+}
+
 /**
- * Capture Tun's opaque checkout token before WooCommerce handles the
- * add-to-cart query. When the request is one of Tun's mapped SaaS products,
- * remove any previous SaaS-plan cart item first so a retry/refresh cannot turn
- * a single subscription into quantity 2 or mix Person and Schools together.
+ * Capture Tun's opaque checkout token early in the request. The token is kept
+ * in the WooCommerce session until an order is completed.
  */
 function tun_saas_capture_checkout_token() {
     if ( ! function_exists( 'WC' ) || ! WC()->session ) {
@@ -38,56 +50,78 @@ function tun_saas_capture_checkout_token() {
     }
 
     $token = tun_saas_clean_checkout_token( $_GET[ TUN_SAAS_CHECKOUT_QUERY_KEY ] );
-    if ( ! $token ) {
-        return;
-    }
-
-    WC()->session->set( TUN_SAAS_CHECKOUT_META_KEY, $token );
-
-    $requested_product_id = isset( $_GET['add-to-cart'] )
-        ? absint( wp_unslash( $_GET['add-to-cart'] ) )
-        : 0;
-
-    if ( ! in_array( $requested_product_id, tun_saas_mapped_product_ids(), true ) || ! WC()->cart ) {
-        return;
-    }
-
-    foreach ( WC()->cart->get_cart() as $cart_item_key => $cart_item ) {
-        $product_id   = isset( $cart_item['product_id'] ) ? absint( $cart_item['product_id'] ) : 0;
-        $variation_id = isset( $cart_item['variation_id'] ) ? absint( $cart_item['variation_id'] ) : 0;
-
-        if (
-            in_array( $product_id, tun_saas_mapped_product_ids(), true ) ||
-            in_array( $variation_id, tun_saas_mapped_product_ids(), true )
-        ) {
-            WC()->cart->remove_cart_item( $cart_item_key );
-        }
+    if ( $token ) {
+        WC()->session->set( TUN_SAAS_CHECKOUT_META_KEY, $token );
     }
 }
-// WooCommerce loads the cart from session on wp_loaded before its add-to-cart
-// handler runs at priority 20. Priority 15 lets us normalize the SaaS cart first.
-add_action( 'wp_loaded', 'tun_saas_capture_checkout_token', 15 );
+add_action( 'wp_loaded', 'tun_saas_capture_checkout_token', 12 );
 
 /**
- * A Tun SaaS checkout represents one account subscription, not a purchasable
- * quantity. Keep the mapped plan product at quantity 1 for the active Tun
- * checkout session, including Cart/Checkout Blocks and classic checkout.
+ * Immediately before WooCommerce adds one of Tun's SaaS products, remove any
+ * existing mapped SaaS plan from the cart. This is deliberately done in the
+ * add-to-cart validation path because the cart is fully loaded there, and it
+ * remains reliable even when another theme/plugin also processes add-to-cart.
+ */
+function tun_saas_prepare_plan_add_to_cart( $passed, $product_id, $quantity, $variation_id = 0, $variation = array() ) {
+    if ( ! $passed || ! tun_saas_active_checkout_token() || ! tun_saas_is_mapped_product( $product_id, $variation_id ) ) {
+        return $passed;
+    }
+
+    if ( function_exists( 'WC' ) && WC()->cart ) {
+        foreach ( WC()->cart->get_cart() as $cart_item_key => $cart_item ) {
+            $cart_product_id   = isset( $cart_item['product_id'] ) ? absint( $cart_item['product_id'] ) : 0;
+            $cart_variation_id = isset( $cart_item['variation_id'] ) ? absint( $cart_item['variation_id'] ) : 0;
+
+            if ( tun_saas_is_mapped_product( $cart_product_id, $cart_variation_id ) ) {
+                WC()->cart->remove_cart_item( $cart_item_key );
+            }
+        }
+    }
+
+    return true;
+}
+add_filter( 'woocommerce_add_to_cart_validation', 'tun_saas_prepare_plan_add_to_cart', 5, 5 );
+
+/**
+ * A Tun SaaS checkout represents exactly one account subscription. Force the
+ * newly added mapped product to quantity 1 and remove any other mapped plan.
+ * This second guard covers Store API/block checkouts and sites where another
+ * extension invokes add_to_cart more than once in a request.
+ */
+function tun_saas_normalize_plan_after_add( $cart_item_key, $product_id, $quantity, $variation_id, $variation, $cart_item_data ) {
+    if ( ! tun_saas_active_checkout_token() || ! tun_saas_is_mapped_product( $product_id, $variation_id ) ) {
+        return;
+    }
+
+    if ( ! function_exists( 'WC' ) || ! WC()->cart ) {
+        return;
+    }
+
+    foreach ( WC()->cart->get_cart() as $other_key => $cart_item ) {
+        $cart_product_id   = isset( $cart_item['product_id'] ) ? absint( $cart_item['product_id'] ) : 0;
+        $cart_variation_id = isset( $cart_item['variation_id'] ) ? absint( $cart_item['variation_id'] ) : 0;
+
+        if ( $other_key !== $cart_item_key && tun_saas_is_mapped_product( $cart_product_id, $cart_variation_id ) ) {
+            WC()->cart->remove_cart_item( $other_key );
+        }
+    }
+
+    if ( isset( WC()->cart->cart_contents[ $cart_item_key ] ) ) {
+        WC()->cart->set_quantity( $cart_item_key, 1, false );
+    }
+}
+add_action( 'woocommerce_add_to_cart', 'tun_saas_normalize_plan_after_add', 100, 6 );
+
+/**
+ * Also expose mapped SaaS plans as sold individually while a Tun checkout token
+ * is active, so quantity controls cannot create multi-seat subscriptions.
  */
 function tun_saas_sell_checkout_plan_individually( $sold_individually, $product ) {
-    if ( $sold_individually || ! function_exists( 'WC' ) || ! WC()->session || ! is_a( $product, 'WC_Product' ) ) {
+    if ( $sold_individually || ! tun_saas_active_checkout_token() || ! is_a( $product, 'WC_Product' ) ) {
         return $sold_individually;
     }
 
-    $token = tun_saas_clean_checkout_token( WC()->session->get( TUN_SAAS_CHECKOUT_META_KEY ) );
-    if ( ! $token ) {
-        return $sold_individually;
-    }
-
-    $product_id = absint( $product->get_id() );
-    $parent_id  = absint( $product->get_parent_id() );
-
-    return in_array( $product_id, tun_saas_mapped_product_ids(), true ) ||
-        in_array( $parent_id, tun_saas_mapped_product_ids(), true );
+    return tun_saas_is_mapped_product( $product->get_id(), $product->get_parent_id() );
 }
 add_filter( 'woocommerce_is_sold_individually', 'tun_saas_sell_checkout_plan_individually', 20, 2 );
 
@@ -96,7 +130,7 @@ function tun_saas_add_token_to_order( $order, $data ) {
         return;
     }
 
-    $token = tun_saas_clean_checkout_token( WC()->session->get( TUN_SAAS_CHECKOUT_META_KEY ) );
+    $token = tun_saas_active_checkout_token();
     if ( $token ) {
         $order->update_meta_data( TUN_SAAS_CHECKOUT_META_KEY, $token );
     }
@@ -108,7 +142,7 @@ function tun_saas_add_token_to_store_api_order( $order ) {
         return;
     }
 
-    $token = tun_saas_clean_checkout_token( WC()->session->get( TUN_SAAS_CHECKOUT_META_KEY ) );
+    $token = tun_saas_active_checkout_token();
     if ( $token ) {
         $order->update_meta_data( TUN_SAAS_CHECKOUT_META_KEY, $token );
         $order->save();
@@ -122,8 +156,8 @@ function tun_saas_copy_token_to_subscription( $subscription, $order, $recurring_
     }
 
     $token = tun_saas_clean_checkout_token( $order->get_meta( TUN_SAAS_CHECKOUT_META_KEY, true ) );
-    if ( ! $token && function_exists( 'WC' ) && WC()->session ) {
-        $token = tun_saas_clean_checkout_token( WC()->session->get( TUN_SAAS_CHECKOUT_META_KEY ) );
+    if ( ! $token ) {
+        $token = tun_saas_active_checkout_token();
     }
 
     if ( $token ) {
