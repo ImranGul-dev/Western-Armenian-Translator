@@ -6,6 +6,9 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import {
   SystemFeatureToggleProvider,
 } from "@/contexts/SystemFeatureToggleContext";
+import {
+  SystemFeatureRouteGate,
+} from "@/components/SystemFeatureRouteGate";
 
 export function AppProviders({
   children,
@@ -15,7 +18,9 @@ export function AppProviders({
   return (
     <AuthProvider>
       <SystemFeatureToggleProvider>
-        {children}
+        <SystemFeatureRouteGate>
+          {children}
+        </SystemFeatureRouteGate>
       </SystemFeatureToggleProvider>
     </AuthProvider>
   );
