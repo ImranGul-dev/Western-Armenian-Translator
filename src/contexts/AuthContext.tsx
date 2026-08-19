@@ -25,7 +25,7 @@ function parseEffectivePlan(value: unknown): EffectivePlan | null {
   if (!row || typeof row !== "object") return null;
   const plan = row as Record<string, unknown>;
   const slug = plan.slug === "premium" || plan.slug === "business" || plan.slug === "admin" || plan.slug === "anonymous" ? plan.slug : "free";
-  const source = plan.source === "manual" || plan.source === "stripe" || plan.source === "admin" || plan.source === "anonymous" ? plan.source : "default";
+  const source = plan.source === "manual" || plan.source === "stripe" || plan.source === "woocommerce" || plan.source === "admin" || plan.source === "anonymous" ? plan.source : "default";
   return {
     id: typeof plan.id === "string" ? plan.id : null,
     slug,
@@ -40,9 +40,13 @@ function parseEffectivePlan(value: unknown): EffectivePlan | null {
     widget_monthly_character_limit: plan.widget_monthly_character_limit == null ? null : Number(plan.widget_monthly_character_limit),
     widget_branding_removable: plan.widget_branding_removable === true,
     override_expires_at: typeof plan.override_expires_at === "string" ? plan.override_expires_at : null,
+    billing_provider: typeof plan.billing_provider === "string" ? plan.billing_provider : null,
+    subscription_status: typeof plan.subscription_status === "string" ? plan.subscription_status : null,
     stripe_status: typeof plan.stripe_status === "string" ? plan.stripe_status : null,
     stripe_subscription_id: typeof plan.stripe_subscription_id === "string" ? plan.stripe_subscription_id : null,
-    stripe_customer_id: typeof plan.stripe_customer_id === "string" ? plan.stripe_customer_id : null
+    stripe_customer_id: typeof plan.stripe_customer_id === "string" ? plan.stripe_customer_id : null,
+    woocommerce_subscription_id: typeof plan.woocommerce_subscription_id === "number" ? plan.woocommerce_subscription_id : null,
+    woocommerce_customer_id: typeof plan.woocommerce_customer_id === "number" ? plan.woocommerce_customer_id : null
   };
 }
 
