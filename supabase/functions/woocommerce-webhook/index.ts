@@ -530,6 +530,33 @@ Deno.serve(
       ) ||
       "";
 
+    // WooCommerce's first activation test is a special unsigned form-encoded
+    // ping: `webhook_id=<id>`. Accept only that narrow, side-effect-free probe.
+    // Real subscription deliveries still require the HMAC signature below.
+    const userAgent =
+      request.headers.get(
+        "user-agent",
+      ) ||
+      "";
+
+    const activationPing =
+      !signature &&
+      /^webhook_id=\d+$/u.test(
+        rawBody.trim(),
+      ) &&
+      /WooCommerce\/.+ Hookshot \(WordPress\/.+\)/u.test(
+        userAgent,
+      );
+
+    if (activationPing) {
+      return json({
+        received:
+          true,
+        ping:
+          true,
+      });
+    }
+
     if (
       !await validSignature(
         rawBody,
@@ -694,8 +721,8 @@ Deno.serve(
       );
     }
 
-    // WooCommerce sends a ping when a webhook is first created. Accept it so
-    // WooCommerce does not count the configuration test as a failure.
+    // Signed non-subscription deliveries can be acknowledged safely without
+    // touching plan access.
     if (!subscriptionId) {
       await markEvent(
         admin,
