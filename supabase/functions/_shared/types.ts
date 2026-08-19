@@ -1,7 +1,7 @@
 export const LANGUAGE_CODES = ["en", "hyw", "hye"] as const;
 export type LanguageCode = (typeof LANGUAGE_CODES)[number];
 export type AccountRole = "anonymous" | "user" | "language_editor" | "admin";
-export type PlanSource = "anonymous" | "default" | "stripe" | "manual" | "admin";
+export type PlanSource = "anonymous" | "default" | "stripe" | "woocommerce" | "manual" | "admin";
 
 export interface TranslationRequest {
   text: string;
