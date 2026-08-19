@@ -321,8 +321,8 @@ export default function WordBreakdownPage() {
             <p>
               Understand how a Western Armenian word,
               phrase or short sentence works through
-              contextual meanings, base forms and
-              concise grammar explanations.
+              natural meaning, literal construction,
+              base forms and concise grammar explanations.
             </p>
           </section>
 
@@ -440,7 +440,7 @@ export default function WordBreakdownPage() {
                     {showLiteralMeaning ? (
                       <article className="word-breakdown-meaning-card">
                         <span className="word-breakdown-detail-label">
-                          Literal meaning
+                          Literal / built meaning
                         </span>
 
                         <p>
