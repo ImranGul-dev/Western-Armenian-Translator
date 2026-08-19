@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { startCheckout } from "@/lib/billing-api";
 import { FALLBACK_PLANS } from "@/lib/plans";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
-import type { Plan } from "@/types/database";
+import type { Plan, PlanSlug } from "@/types/database";
 
 function requestedPlan(): "premium" | "business" | null {
   if (typeof window === "undefined") return null;
@@ -20,6 +20,12 @@ function formatPrice(plan: Plan): string {
     currency: (plan.currency || "usd").toUpperCase(),
     maximumFractionDigits: plan.price_monthly_cents % 100 === 0 ? 0 : 2
   }).format(plan.price_monthly_cents / 100);
+}
+
+function pricingPlanName(slug: PlanSlug): string {
+  if (slug === "premium") return "Person";
+  if (slug === "business") return "Elite";
+  return "Free";
 }
 
 export default function PricingPage() {
@@ -71,6 +77,7 @@ export default function PricingPage() {
         <p className="eyebrow">Plans</p>
         <h1>Choose your translation plan</h1>
         <p>Upgrade for a larger monthly allowance, longer requests and expanded account features.</p>
+        <p>Paid subscriptions are billed annually on Tun&apos;s secure WooCommerce checkout, where the current price, tax and available payment methods are shown before payment.</p>
       </section>
 
       {message && <div className="info-banner">{message}</div>}
@@ -79,6 +86,8 @@ export default function PricingPage() {
         {display.map(plan => {
           const sameEffectivePlan = current?.slug === plan.slug;
           const sameWooPlan = sameEffectivePlan && current?.source === "woocommerce";
+          const displayName = pricingPlanName(plan.slug);
+          const isPaidPlan = plan.slug === "premium" || plan.slug === "business";
 
           return (
             <article className={`pricing-card ${sameEffectivePlan ? "current" : ""}`} key={plan.slug}>
@@ -88,14 +97,14 @@ export default function PricingPage() {
                     ? "Current plan"
                     : sameEffectivePlan && current?.source === "manual"
                       ? "Manual access"
-                      : plan.name}
+                      : displayName}
                 </span>
 
-                <h2>{plan.name}</h2>
+                <h2>{displayName}</h2>
 
                 <div className="price">
-                  {formatPrice(plan)}
-                  <span>/{plan.billing_interval || "month"}</span>
+                  {isPaidPlan ? "Annual" : formatPrice(plan)}
+                  <span>{isPaidPlan ? " subscription" : ""}</span>
                 </div>
               </div>
 
