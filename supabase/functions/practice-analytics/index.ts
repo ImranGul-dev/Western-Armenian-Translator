@@ -23,6 +23,10 @@ import {
   hasPaidFeatureAccess,
 } from "../_shared/paid-feature-access.ts";
 
+import {
+  isRuntimeSystemFeatureEnabled,
+} from "../_shared/system-feature-toggles.ts";
+
 
 interface PracticeAnalyticsRequest {
   timezone?: unknown;
@@ -240,6 +244,26 @@ Deno.serve(
           },
         },
       );
+
+    const featureEnabled =
+      await isRuntimeSystemFeatureEnabled(
+        admin,
+        "practice_analytics",
+      );
+
+    if (!featureEnabled) {
+      return json(
+        {
+          success: false,
+          error:
+            "Practice Analytics is temporarily unavailable.",
+          code:
+            "feature_disabled",
+        },
+        503,
+        cors,
+      );
+    }
 
     let user;
 
