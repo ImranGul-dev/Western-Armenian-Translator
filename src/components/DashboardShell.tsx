@@ -20,6 +20,10 @@ import {
   SiteFrame,
 } from "@/components/SiteFrame";
 
+import {
+  useSystemFeatureToggles,
+} from "@/contexts/SystemFeatureToggleContext";
+
 export function DashboardShell({
   children,
   title,
@@ -34,9 +38,15 @@ export function DashboardShell({
   const pathname =
     usePathname();
 
+  const {
+    toggles,
+  } =
+    useSystemFeatureToggles();
+
   const showDailyPractice =
     !admin &&
-    pathname === "/dashboard";
+    pathname === "/dashboard" &&
+    toggles.daily_practice;
 
   return (
     <SiteFrame compact>
