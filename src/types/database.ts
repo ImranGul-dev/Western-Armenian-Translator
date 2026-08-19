@@ -5,7 +5,7 @@ import type {
 export type ProfileRole = "user" | "language_editor" | "admin";
 export type PlanSlug = "free" | "premium" | "business";
 export type EffectivePlanSlug = PlanSlug | "admin" | "anonymous";
-export type PlanSource = "anonymous" | "default" | "stripe" | "manual" | "admin";
+export type PlanSource = "anonymous" | "default" | "stripe" | "woocommerce" | "manual" | "admin";
 export type WidgetTheme = "light" | "dark" | "auto";
 
 export interface Plan {
@@ -44,9 +44,13 @@ export interface EffectivePlan {
   widget_monthly_character_limit: number | null;
   widget_branding_removable: boolean;
   override_expires_at: string | null;
+  billing_provider?: string | null;
+  subscription_status?: string | null;
   stripe_status: string | null;
   stripe_subscription_id: string | null;
   stripe_customer_id: string | null;
+  woocommerce_subscription_id?: number | null;
+  woocommerce_customer_id?: number | null;
 }
 
 export interface Profile {
@@ -69,9 +73,14 @@ export interface Subscription {
   user_id: string;
   plan_id: string | null;
   plan_slug: PlanSlug | null;
+  billing_provider?: "stripe" | "woocommerce" | null;
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
   stripe_price_id: string | null;
+  woocommerce_customer_id?: number | null;
+  woocommerce_subscription_id?: number | null;
+  woocommerce_order_id?: number | null;
+  woocommerce_product_id?: number | null;
   status: string;
   amount_cents: number | null;
   currency: string | null;
