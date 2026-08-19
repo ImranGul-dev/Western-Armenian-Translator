@@ -63,6 +63,11 @@ const ROUTE_FEATURES: readonly RouteFeature[] = [
     feature: "practice_analytics",
     label: "Practice Analytics",
   },
+  {
+    match: (pathname) => pathname.startsWith("/dashboard/widget"),
+    feature: "embeddable_widgets",
+    label: "Embeddable Widgets",
+  },
 ];
 
 export function SystemFeatureRouteGate({
