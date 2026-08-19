@@ -71,6 +71,14 @@ type Props =
   | InputPanelProps
   | OutputPanelProps;
 
+function containsArmenianScript(
+  value: string,
+): boolean {
+  return /[\u0531-\u058F]/u.test(
+    value,
+  );
+}
+
 export function TranslationPanel(
   props: Props,
 ) {
@@ -255,7 +263,10 @@ export function TranslationPanel(
 
             {props.language ===
               "hyw" &&
-            props.transliteration ? (
+            props.transliteration &&
+            containsArmenianScript(
+              props.value,
+            ) ? (
               <div
                 className={styles.inlineTransliteration}
                 aria-live="polite"
