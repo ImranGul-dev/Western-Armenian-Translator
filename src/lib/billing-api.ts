@@ -40,11 +40,13 @@ async function callFunction<T>(name: string, session: Session, body: Record<stri
 }
 
 export async function startCheckout(session: Session, plan: "premium" | "business"): Promise<string> {
-  const data = await callFunction<{ url?: string }>("stripe-checkout", session, { plan });
-  if (!data.url) throw new Error("Stripe did not return a checkout URL.");
+  const data = await callFunction<{ url?: string }>("woocommerce-checkout", session, { plan });
+  if (!data.url) throw new Error("WooCommerce did not return a checkout URL.");
   return data.url;
 }
 
+// Legacy Stripe portal helpers remain available for historical/admin records
+// until the customer billing page is migrated fully to WooCommerce management.
 export async function openBillingPortal(session: Session, action: PortalAction = "home"): Promise<string> {
   const data = await callFunction<{ url?: string }>("stripe-portal", session, { action });
   if (!data.url) throw new Error("Stripe did not return a portal URL.");
