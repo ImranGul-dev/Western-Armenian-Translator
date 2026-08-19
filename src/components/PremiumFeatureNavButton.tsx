@@ -12,6 +12,10 @@ import {
 } from "@/contexts/AuthContext";
 
 import {
+  useSystemFeatureEnabled,
+} from "@/contexts/SystemFeatureToggleContext";
+
+import {
   hasPaidFeatureAccess,
   type PaidFeature,
 } from "@/lib/paid-feature-access";
@@ -95,6 +99,13 @@ export function PremiumFeatureNavButton({
     loading,
   } = useAuth();
 
+  const {
+    enabled: systemEnabled,
+    loading: toggleLoading,
+  } = useSystemFeatureEnabled(
+    feature,
+  );
+
   const [
     open,
     setOpen,
@@ -118,6 +129,10 @@ export function PremiumFeatureNavButton({
 
   const locked =
     !hasFeatureAccess;
+
+  const systemDisabled =
+    !toggleLoading &&
+    !systemEnabled;
 
   const featureBullets =
     FEATURE_BULLETS[
@@ -161,6 +176,7 @@ export function PremiumFeatureNavButton({
   }, [open]);
 
   if (
+    !systemDisabled &&
     !locked &&
     onActivate
   ) {
@@ -172,6 +188,7 @@ export function PremiumFeatureNavButton({
         }
         disabled={
           loading ||
+          toggleLoading ||
           disabled
         }
         onClick={
@@ -184,6 +201,7 @@ export function PremiumFeatureNavButton({
   }
 
   if (
+    !systemDisabled &&
     !locked &&
     href
   ) {
@@ -204,7 +222,10 @@ export function PremiumFeatureNavButton({
       <button
         type="button"
         className={controlClassName}
-        disabled={loading}
+        disabled={
+          loading ||
+          toggleLoading
+        }
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={() =>
@@ -215,7 +236,7 @@ export function PremiumFeatureNavButton({
           {label}
         </span>
 
-        {locked ? (
+        {locked && !systemDisabled ? (
           <span
             className="premium-nav-lock"
             aria-label="Paid feature"
@@ -257,7 +278,36 @@ export function PremiumFeatureNavButton({
               {"\u00D7"}
             </button>
 
-            {locked ? (
+            {systemDisabled ? (
+              <>
+                <p className="eyebrow">
+                  Temporarily unavailable
+                </p>
+
+                <h2 id="premium-feature-title">
+                  {label} is currently unavailable
+                </h2>
+
+                <p
+                  id="premium-feature-description"
+                  className="upgrade-modal-copy"
+                >
+                  This feature has been temporarily disabled by the Tun administrator. Your account access and saved data are unchanged.
+                </p>
+
+                <div className="upgrade-modal-actions">
+                  <button
+                    type="button"
+                    className="primary-button upgrade-modal-primary"
+                    onClick={() =>
+                      setOpen(false)
+                    }
+                  >
+                    Got it
+                  </button>
+                </div>
+              </>
+            ) : locked ? (
               <>
                 <p className="eyebrow">
                   Paid feature
@@ -374,10 +424,6 @@ export function PremiumFeatureNavButton({
                     ),
                   )}
                 </ul>
-
-                <p className="upgrade-modal-note">
-                  This feature is currently being developed.
-                </p>
 
                 <div className="upgrade-modal-actions">
                   <button
