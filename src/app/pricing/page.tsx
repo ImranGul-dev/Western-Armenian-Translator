@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { SiteFrame } from "@/components/SiteFrame";
 import { useAuth } from "@/contexts/AuthContext";
-import { openBillingPortal, startCheckout } from "@/lib/billing-api";
+import { startCheckout } from "@/lib/billing-api";
 import { FALLBACK_PLANS } from "@/lib/plans";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Plan } from "@/types/database";
@@ -28,7 +28,6 @@ export default function PricingPage() {
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const automaticCheckoutStarted = useRef(false);
-  const billingEnabled = process.env.NEXT_PUBLIC_BILLING_ENABLED === "true";
 
   useEffect(() => {
     void getSupabaseBrowserClient().from("plans").select("*").eq("active", true).order("sort_order")
@@ -46,36 +45,25 @@ export default function PricingPage() {
       return;
     }
 
-    if (!billingEnabled) {
-      setMessage("Online subscription checkout is disabled until billing is activated.");
-      return;
-    }
-
     setBusy(slug);
     setMessage("");
 
     try {
-      if (current?.source === "stripe" && (current.slug === "premium" || current.slug === "business")) {
-        location.href = await openBillingPortal(session, "subscription_update");
-      } else {
-        // Manual application access remains separate. Checkout creates a real subscription
-        // while the manual override continues to take priority until it is removed or expires.
-        location.href = await startCheckout(session, slug);
-      }
+      location.href = await startCheckout(session, slug);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Could not open billing.");
+      setMessage(error instanceof Error ? error.message : "Could not open subscription checkout.");
       setBusy(null);
     }
   }
 
   useEffect(() => {
     const plan = requestedPlan();
-    if (authLoading || !session || !plan || automaticCheckoutStarted.current || !billingEnabled) return;
+    if (authLoading || !session || !plan || automaticCheckoutStarted.current) return;
     automaticCheckoutStarted.current = true;
     void beginBilling(plan);
     // beginBilling intentionally depends on live auth state and is executed only once per page load.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authLoading, billingEnabled, session]);
+  }, [authLoading, session]);
 
   return (
     <SiteFrame>
@@ -90,13 +78,13 @@ export default function PricingPage() {
       <div className="pricing-grid">
         {display.map(plan => {
           const sameEffectivePlan = current?.slug === plan.slug;
-          const sameStripePlan = sameEffectivePlan && current?.source === "stripe";
+          const sameWooPlan = sameEffectivePlan && current?.source === "woocommerce";
 
           return (
             <article className={`pricing-card ${sameEffectivePlan ? "current" : ""}`} key={plan.slug}>
               <div>
                 <span className="plan-label">
-                  {sameStripePlan
+                  {sameWooPlan
                     ? "Current plan"
                     : sameEffectivePlan && current?.source === "manual"
                       ? "Manual access"
@@ -117,24 +105,20 @@ export default function PricingPage() {
 
               <button
                 className="primary-button full-button"
-                disabled={sameStripePlan || plan.slug === "free" || !!busy}
+                disabled={sameWooPlan || plan.slug === "free" || !!busy}
                 onClick={() => plan.slug !== "free" && void beginBilling(plan.slug)}
               >
-                {sameStripePlan
+                {sameWooPlan
                   ? "Current plan"
                   : plan.slug === "free"
                     ? "Included"
                     : !session
                       ? "Choose plan"
-                      : !billingEnabled
-                        ? "Billing unavailable"
-                        : busy === plan.slug
-                          ? "Opening billing…"
-                          : sameEffectivePlan && current?.source === "manual"
-                            ? "Subscribe"
-                            : current?.source === "stripe" && (current.slug === "premium" || current.slug === "business")
-                              ? "Change plan"
-                              : "Choose plan"}
+                      : busy === plan.slug
+                        ? "Opening checkout…"
+                        : sameEffectivePlan && current?.source === "manual"
+                          ? "Subscribe"
+                          : "Choose plan"}
               </button>
             </article>
           );
