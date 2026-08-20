@@ -13,83 +13,41 @@ const TUN_LOGO_URL =
   "https://tunapp.com/wp-content/uploads/2020/09/Tun-Logo_Web-Black_80.png";
 
 export function Header() {
-  const pathname =
-    usePathname();
-
-  const [
-    mobileMenuOpen,
-    setMobileMenuOpen,
-  ] = useState(false);
-
-  const {
-    user,
-    profile,
-    plan,
-    loading,
-    signOut,
-  } = useAuth();
+  const pathname = usePathname();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, profile, plan, loading, signOut } = useAuth();
 
   const isEditor =
-    profile?.role ===
-      "language_editor" ||
-    profile?.role ===
-      "admin";
+    profile?.role === "language_editor" ||
+    profile?.role === "admin";
 
-  const hasThesaurusAccess =
-    hasPaidFeatureAccess(
-      "thesaurus",
-      {
-        isAuthenticated:
-          Boolean(user),
-
-        role:
-          profile?.role,
-
-        planSlug:
-          plan?.slug,
-      },
-    );
+  const hasThesaurusAccess = hasPaidFeatureAccess(
+    "thesaurus",
+    {
+      isAuthenticated: Boolean(user),
+      role: profile?.role,
+      planSlug: plan?.slug,
+    },
+  );
 
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname]);
 
   useEffect(() => {
-    if (!mobileMenuOpen) {
-      return;
-    }
+    if (!mobileMenuOpen) return;
 
-    const handleEscape = (
-      event: KeyboardEvent,
-    ) => {
-      if (event.key === "Escape") {
-        setMobileMenuOpen(false);
-      }
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileMenuOpen(false);
     };
 
-    window.addEventListener(
-      "keydown",
-      handleEscape,
-    );
-
-    return () => {
-      window.removeEventListener(
-        "keydown",
-        handleEscape,
-      );
-    };
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
   }, [mobileMenuOpen]);
 
-  const navClass = (
-    href: string,
-  ) =>
+  const navClass = (href: string) =>
     pathname === href ||
-    (
-      href !== "/" &&
-      pathname.startsWith(
-        href,
-      )
-    )
+    (href !== "/" && pathname.startsWith(href))
       ? "nav-link active"
       : "nav-link";
 
@@ -97,10 +55,7 @@ export function Header() {
     <>
       <div className="brand-strip">
         <div className="shell brand-strip-inner">
-          <span>
-            Western Armenian language technology by Tun
-          </span>
-
+          <span>Western Armenian language technology by Tun</span>
           <span className="brand-strip-note">
             English · Western Armenian · Eastern Armenian
           </span>
@@ -125,49 +80,23 @@ export function Header() {
               />
             </Link>
 
-            <span
-              className="brand-divider"
-              aria-hidden="true"
-            />
+            <span className="brand-divider" aria-hidden="true" />
 
             <div className="brand-copy">
-              <span className="brand-title">
-                Western Armenian Translator
-              </span>
-
-              <span className="brand-subtitle">
-                Translate with Tun
-              </span>
+              <span className="brand-title">Western Armenian Translator</span>
+              <span className="brand-subtitle">Translate with Tun</span>
             </div>
           </div>
 
           <nav
             id="site-main-navigation"
-            className={`main-nav${
-              mobileMenuOpen
-                ? " mobile-open"
-                : ""
-            }`}
+            className={`main-nav${mobileMenuOpen ? " mobile-open" : ""}`}
             aria-label="Main navigation"
           >
-            <Link
-              href="/"
-              className={
-                navClass("/")
-              }
-            >
-              Translator
-            </Link>
+            <Link href="/" className={navClass("/")}>Translator</Link>
 
             {hasThesaurusAccess ? (
-              <Link
-                href="/thesaurus"
-                className={
-                  navClass(
-                    "/thesaurus",
-                  )
-                }
-              >
+              <Link href="/thesaurus" className={navClass("/thesaurus")}>
                 Thesaurus
               </Link>
             ) : (
@@ -195,67 +124,59 @@ export function Header() {
             />
 
             {!user && (
-              <Link
-                href="/pricing"
-                className={
-                  navClass(
-                    "/pricing",
-                  )
-                }
-              >
+              <Link href="/pricing" className={navClass("/pricing")}>
                 Pricing
               </Link>
             )}
 
             {user && (
-              <Link
-                href="/dashboard"
-                className={
-                  navClass(
-                    "/dashboard",
-                  )
-                }
-              >
+              <Link href="/dashboard" className={navClass("/dashboard")}>
                 Dashboard
               </Link>
             )}
 
             {isEditor && (
-              <Link
-                href="/admin"
-                className={
-                  navClass(
-                    "/admin",
-                  )
-                }
-              >
+              <Link href="/admin" className={navClass("/admin")}>
                 Admin
               </Link>
+            )}
+
+            {!loading && (
+              user ? (
+                <button
+                  className="nav-link mobile-session-action"
+                  type="button"
+                  onClick={() => void signOut()}
+                >
+                  Log out
+                </button>
+              ) : (
+                <Link
+                  className="nav-link mobile-session-action"
+                  href="/login"
+                >
+                  Log in
+                </Link>
+              )
             )}
           </nav>
 
           <div className="header-actions">
-            {!loading &&
-              (
-                user ? (
-                  <button
-                    className="text-button header-session-action"
-                    type="button"
-                    onClick={() =>
-                      void signOut()
-                    }
-                  >
-                    Log out
-                  </button>
-                ) : (
-                  <Link
-                    className="text-button header-session-action"
-                    href="/login"
-                  >
-                    Log in
-                  </Link>
-                )
-              )}
+            {!loading && (
+              user ? (
+                <button
+                  className="text-button header-session-action"
+                  type="button"
+                  onClick={() => void signOut()}
+                >
+                  Log out
+                </button>
+              ) : (
+                <Link className="text-button header-session-action" href="/login">
+                  Log in
+                </Link>
+              )
+            )}
 
             <ThemeToggle />
 
@@ -269,23 +190,12 @@ export function Header() {
                   ? "Close navigation menu"
                   : "Open navigation menu"
               }
-              onClick={() =>
-                setMobileMenuOpen(
-                  (open) => !open,
-                )
-              }
+              onClick={() => setMobileMenuOpen((open) => !open)}
             >
-              <span
-                className="mobile-nav-toggle-label"
-                aria-hidden="true"
-              >
+              <span className="mobile-nav-toggle-label" aria-hidden="true">
                 Menu
               </span>
-
-              <span
-                className="mobile-nav-toggle-icon"
-                aria-hidden="true"
-              >
+              <span className="mobile-nav-toggle-icon" aria-hidden="true">
                 <span />
                 <span />
                 <span />
