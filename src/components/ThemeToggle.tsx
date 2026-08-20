@@ -16,8 +16,7 @@ export function ThemeToggle() {
 
   useEffect(() => {
     const stored = window.localStorage.getItem("wat-theme") as Theme | null;
-    const preferred = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-    const resolved = stored === "dark" || stored === "light" ? stored : preferred;
+    const resolved: Theme = stored === "dark" || stored === "light" ? stored : "light";
     setTheme(resolved);
     applyTheme(resolved);
     setMounted(true);
