@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 import { PremiumFeatureNavButton } from "@/components/PremiumFeatureNavButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -14,6 +15,11 @@ const TUN_LOGO_URL =
 export function Header() {
   const pathname =
     usePathname();
+
+  const [
+    mobileMenuOpen,
+    setMobileMenuOpen,
+  ] = useState(false);
 
   const {
     user,
@@ -43,6 +49,36 @@ export function Header() {
           plan?.slug,
       },
     );
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) {
+      return;
+    }
+
+    const handleEscape = (
+      event: KeyboardEvent,
+    ) => {
+      if (event.key === "Escape") {
+        setMobileMenuOpen(false);
+      }
+    };
+
+    window.addEventListener(
+      "keydown",
+      handleEscape,
+    );
+
+    return () => {
+      window.removeEventListener(
+        "keydown",
+        handleEscape,
+      );
+    };
+  }, [mobileMenuOpen]);
 
   const navClass = (
     href: string,
@@ -106,7 +142,12 @@ export function Header() {
           </div>
 
           <nav
-            className="main-nav"
+            id="site-main-navigation"
+            className={`main-nav${
+              mobileMenuOpen
+                ? " mobile-open"
+                : ""
+            }`}
             aria-label="Main navigation"
           >
             <Link
@@ -198,7 +239,7 @@ export function Header() {
               (
                 user ? (
                   <button
-                    className="text-button"
+                    className="text-button header-session-action"
                     type="button"
                     onClick={() =>
                       void signOut()
@@ -208,7 +249,7 @@ export function Header() {
                   </button>
                 ) : (
                   <Link
-                    className="text-button"
+                    className="text-button header-session-action"
                     href="/login"
                   >
                     Log in
@@ -217,6 +258,39 @@ export function Header() {
               )}
 
             <ThemeToggle />
+
+            <button
+              type="button"
+              className="mobile-nav-toggle"
+              aria-controls="site-main-navigation"
+              aria-expanded={mobileMenuOpen}
+              aria-label={
+                mobileMenuOpen
+                  ? "Close navigation menu"
+                  : "Open navigation menu"
+              }
+              onClick={() =>
+                setMobileMenuOpen(
+                  (open) => !open,
+                )
+              }
+            >
+              <span
+                className="mobile-nav-toggle-label"
+                aria-hidden="true"
+              >
+                Menu
+              </span>
+
+              <span
+                className="mobile-nav-toggle-icon"
+                aria-hidden="true"
+              >
+                <span />
+                <span />
+                <span />
+              </span>
+            </button>
           </div>
         </div>
       </header>
