@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { AppProviders } from "@/components/AppProviders";
 import "./globals.css";
+import "./responsive-polish.css";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 const favicon32 = "https://tunapp.com/wp-content/uploads/2020/09/cropped-Tun_Site-Icon-32x32.png";
