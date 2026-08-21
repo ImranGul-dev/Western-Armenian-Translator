@@ -9,6 +9,9 @@ import {
 import {
   SystemFeatureRouteGate,
 } from "@/components/SystemFeatureRouteGate";
+import {
+  RolePlayVoiceFeedbackOffer,
+} from "@/components/RolePlayVoiceFeedbackOffer";
 
 export function AppProviders({
   children,
@@ -20,6 +23,7 @@ export function AppProviders({
       <SystemFeatureToggleProvider>
         <SystemFeatureRouteGate>
           {children}
+          <RolePlayVoiceFeedbackOffer />
         </SystemFeatureRouteGate>
       </SystemFeatureToggleProvider>
     </AuthProvider>
