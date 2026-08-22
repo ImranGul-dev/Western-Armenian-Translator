@@ -7,6 +7,7 @@ import { Translator } from "@/components/Translator";
 import { useAuth } from "@/contexts/AuthContext";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import styles from "./HomeTranslatorExperience.module.css";
+import finalPolish from "./HomeTranslatorFinalPolish.module.css";
 
 interface RecentTranslation {
   id: string;
@@ -50,16 +51,40 @@ function currentTranslationText() {
   return result.textContent?.trim() || "";
 }
 
-function downloadCurrentTranslation() {
-  const text = currentTranslationText();
+function downloadText(text: string, filename: string) {
   if (!text) return;
   const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = "tun-western-armenian-translation.txt";
+  anchor.download = filename;
   anchor.click();
   URL.revokeObjectURL(url);
+}
+
+function downloadCurrentTranslation() {
+  downloadText(currentTranslationText(), "tun-western-armenian-translation.txt");
+}
+
+function formatRelativeTime(createdAt: string) {
+  const created = new Date(createdAt).getTime();
+  const diffSeconds = Math.max(0, Math.round((Date.now() - created) / 1000));
+
+  if (diffSeconds < 45) return "just now";
+
+  const minutes = Math.floor(diffSeconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+
+  return new Date(createdAt).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+  });
 }
 
 function useCurrentTranslationReady() {
@@ -79,6 +104,7 @@ function useCurrentTranslationReady() {
 export function HomeTranslatorExperience() {
   const { profile } = useAuth();
   const [recent, setRecent] = useState<RecentTranslation[]>([]);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const translationReady = useCurrentTranslationReady();
 
   useEffect(() => {
@@ -106,8 +132,21 @@ export function HomeTranslatorExperience() {
     location.reload();
   }
 
+  async function copyRecentTranslation(item: RecentTranslation) {
+    await navigator.clipboard.writeText(item.translated_text);
+    setCopiedId(item.id);
+    window.setTimeout(() => setCopiedId(current => current === item.id ? null : current), 1400);
+  }
+
+  function downloadRecentTranslation(item: RecentTranslation) {
+    downloadText(
+      `${item.source_text}\n\n${item.translated_text}`,
+      "tun-recent-translation.txt",
+    );
+  }
+
   return (
-    <div className={styles.experience}>
+    <div className={`${styles.experience} ${finalPolish.experiencePolish}`}>
       <section className={styles.workspace} aria-label="Western Armenian translation workspace">
         <div className={styles.translatorColumn}>
           <Translator />
@@ -217,12 +256,32 @@ export function HomeTranslatorExperience() {
           </div>
 
           {recent.length ? (
-            <div className={styles.historyList}>
+            <div className={`${styles.historyList} ${finalPolish.historyListPolish}`}>
               {recent.map((item) => (
                 <article key={item.id}>
-                  <span>{item.source_text}</span>
-                  <strong>{item.translated_text}</strong>
-                  <small>{new Date(item.created_at).toLocaleString()}</small>
+                  <span className={finalPolish.historySource}>{item.source_text}</span>
+                  <strong className={finalPolish.historyTranslation}>{item.translated_text}</strong>
+                  <div className={finalPolish.historyActions}>
+                    <button
+                      type="button"
+                      className={finalPolish.historyActionButton}
+                      aria-label="Copy translated text"
+                      title={copiedId === item.id ? "Copied" : "Copy translation"}
+                      onClick={() => void copyRecentTranslation(item)}
+                    >
+                      {copiedId === item.id ? "✓" : "▣"}
+                    </button>
+                    <button
+                      type="button"
+                      className={finalPolish.historyActionButton}
+                      aria-label="Download translation"
+                      title="Download translation"
+                      onClick={() => downloadRecentTranslation(item)}
+                    >
+                      ⇩
+                    </button>
+                  </div>
+                  <small className={finalPolish.historyTime}>{formatRelativeTime(item.created_at)}</small>
                 </article>
               ))}
             </div>
