@@ -1,0 +1,104 @@
+.experiencePolish :global(.output-panel .panel-header) {
+  grid-template-columns: minmax(185px, 1fr) auto;
+}
+
+.experiencePolish :global(.output-panel .select-wrap) {
+  max-width: 235px;
+}
+
+.experiencePolish :global(.output-panel .select-wrap select) {
+  text-overflow: clip;
+}
+
+.historyListPolish article {
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1.15fr) auto auto;
+  column-gap: 12px;
+}
+
+.historySource,
+.historyTranslation {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.historyActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.historyActionButton {
+  width: 30px;
+  height: 30px;
+  display: inline-grid;
+  place-items: center;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-soft);
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, transform 120ms ease;
+}
+
+.historyActionButton:hover {
+  background: var(--surface-soft);
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.historyTime {
+  min-width: 48px;
+  color: var(--text-muted);
+  font-size: 10px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+@media (max-width: 960px) {
+  .experiencePolish :global(.output-panel .panel-header) {
+    grid-template-columns: minmax(165px, 1fr) auto;
+  }
+
+  .experiencePolish :global(.output-panel .select-wrap) {
+    max-width: 220px;
+  }
+}
+
+@media (max-width: 820px) {
+  .historyListPolish article {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    row-gap: 6px;
+  }
+
+  .historyTime {
+    grid-column: 1 / -1;
+    text-align: left;
+  }
+}
+
+@media (max-width: 600px) {
+  .experiencePolish :global(.output-panel .panel-header) {
+    grid-template-columns: minmax(145px, 1fr) auto;
+  }
+
+  .historyListPolish article {
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: 6px;
+  }
+
+  .historyTranslation {
+    grid-column: 1 / 2;
+  }
+
+  .historyActions {
+    grid-column: 2 / 3;
+    grid-row: 1 / span 2;
+  }
+
+  .historyTime {
+    grid-column: 1 / -1;
+  }
+}
