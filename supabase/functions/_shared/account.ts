@@ -16,9 +16,13 @@ const FALLBACK_FREE: PlanConfig = {
   widgetMonthlyCharacterLimit: null,
   widgetBrandingRemovable: false,
   overrideExpiresAt: null,
+  billingProvider: null,
+  subscriptionStatus: null,
   stripeStatus: null,
   stripeSubscriptionId: null,
   stripeCustomerId: null,
+  woocommerceSubscriptionId: null,
+  woocommerceCustomerId: null,
 };
 
 const FALLBACK_ANONYMOUS: PlanConfig = {
@@ -52,9 +56,12 @@ export function planFromEffective(value: unknown): PlanConfig {
   const slug = plan.slug === "premium" || plan.slug === "business" || plan.slug === "admin" || plan.slug === "anonymous"
     ? plan.slug
     : "free";
-  const source = plan.source === "manual" || plan.source === "stripe" || plan.source === "admin" || plan.source === "anonymous"
+  const source = plan.source === "manual" || plan.source === "stripe" || plan.source === "woocommerce" || plan.source === "admin" || plan.source === "anonymous"
     ? plan.source
     : "default";
+  const billingProvider = plan.billing_provider === "stripe" || plan.billing_provider === "woocommerce"
+    ? plan.billing_provider
+    : null;
 
   return {
     id: typeof plan.id === "string" ? plan.id : null,
@@ -70,9 +77,13 @@ export function planFromEffective(value: unknown): PlanConfig {
     widgetMonthlyCharacterLimit: nullableNumber(plan.widget_monthly_character_limit),
     widgetBrandingRemovable: plan.widget_branding_removable === true,
     overrideExpiresAt: typeof plan.override_expires_at === "string" ? plan.override_expires_at : null,
+    billingProvider,
+    subscriptionStatus: typeof plan.subscription_status === "string" ? plan.subscription_status : null,
     stripeStatus: typeof plan.stripe_status === "string" ? plan.stripe_status : null,
     stripeSubscriptionId: typeof plan.stripe_subscription_id === "string" ? plan.stripe_subscription_id : null,
     stripeCustomerId: typeof plan.stripe_customer_id === "string" ? plan.stripe_customer_id : null,
+    woocommerceSubscriptionId: nullableNumber(plan.woocommerce_subscription_id),
+    woocommerceCustomerId: nullableNumber(plan.woocommerce_customer_id),
   };
 }
 
