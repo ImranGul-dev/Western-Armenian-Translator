@@ -179,10 +179,10 @@
   padding: 18px;
   display: flex;
   flex-direction: column;
-  border: 1px solid color-mix(in srgb, #8058e8 28%, var(--border));
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
   border-radius: 14px;
-  background: linear-gradient(180deg, color-mix(in srgb, #f4efff 78%, var(--surface)) 0%, var(--surface) 100%);
-  box-shadow: 0 10px 30px rgba(89, 58, 160, 0.08);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 55%, var(--surface)) 0%, var(--surface) 100%);
+  box-shadow: 0 10px 30px rgba(20, 24, 30, 0.05);
 }
 
 .aiTopRow {
@@ -198,7 +198,7 @@
   display: grid;
   place-items: center;
   border-radius: 12px;
-  background: #7147d8;
+  background: var(--accent);
   color: #fff;
   font-size: 24px;
 }
@@ -206,7 +206,7 @@
 .newBadge {
   padding: 3px 8px;
   border-radius: 999px;
-  background: #8c56e9;
+  background: var(--accent);
   color: #fff;
   font-size: 10px;
   font-weight: 800;
@@ -232,14 +232,21 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 0;
+  border: 1px solid var(--accent);
   border-radius: 9px;
-  background: linear-gradient(90deg, #6f3ed7, #8f50ec);
+  background: var(--accent);
   color: #fff;
   text-decoration: none;
   font-size: 12px;
   font-weight: 800;
   cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
+}
+
+.aiButton:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  transform: translateY(-1px);
 }
 
 .aiCard ul {
@@ -255,7 +262,7 @@
 .aiCard li::before {
   content: "✓";
   margin-right: 8px;
-  color: #7a49dc;
+  color: var(--accent);
   font-weight: 900;
 }
 
@@ -266,7 +273,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  color: #7447d8;
+  color: var(--accent-text);
   font-size: 12px;
 }
 
