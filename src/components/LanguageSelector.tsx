@@ -10,6 +10,12 @@ interface LanguageSelectorProps {
   disabled?: boolean;
 }
 
+const LANGUAGE_FLAGS: Record<LanguageCode, string> = {
+  en: "🇺🇸",
+  hyw: "🇦🇲",
+  hye: "🇦🇲",
+};
+
 export function LanguageSelector({
   id,
   label,
@@ -30,7 +36,7 @@ export function LanguageSelector({
         >
           {options.map((code) => (
             <option key={code} value={code}>
-              {LANGUAGES[code].name}
+              {LANGUAGE_FLAGS[code]} {LANGUAGES[code].name}
             </option>
           ))}
         </select>
