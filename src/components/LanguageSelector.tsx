@@ -28,15 +28,35 @@ export function LanguageSelector({
     <div className="language-control">
       <label htmlFor={id}>{label}</label>
       <div className="select-wrap">
+        <span
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            left: "10px",
+            top: "50%",
+            transform: "translateY(-50%)",
+            zIndex: 1,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "18px",
+            lineHeight: 1,
+            pointerEvents: "none"
+          }}
+        >
+          {LANGUAGE_FLAGS[value]}
+        </span>
+
         <select
           id={id}
           value={value}
           onChange={(event: ChangeEvent<HTMLSelectElement>) => onChange(event.target.value as LanguageCode)}
           disabled={disabled}
+          style={{ paddingLeft: "36px" }}
         >
           {options.map((code) => (
             <option key={code} value={code}>
-              {LANGUAGE_FLAGS[code]} {LANGUAGES[code].name}
+              {LANGUAGES[code].name}
             </option>
           ))}
         </select>
