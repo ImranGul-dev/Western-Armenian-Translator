@@ -118,6 +118,7 @@ export function TranslationPanel(
                 }
                 className="panel-action"
                 aria-label="Paste text"
+                data-translator-action="paste-text"
               >
                 <span>
                   {"\u25A3"}
@@ -137,6 +138,7 @@ export function TranslationPanel(
                   !props.value
                 }
                 className="panel-action"
+                data-translator-action="clear-all"
               >
                 <span>
                   {"\u00D7"}
@@ -207,6 +209,7 @@ export function TranslationPanel(
             }
             placeholder="Enter or paste text..."
             spellCheck
+            data-translator-source="true"
           />
 
           <div className="panel-footer-row">
@@ -253,6 +256,8 @@ export function TranslationPanel(
               role="region"
               aria-label="Translation result"
               aria-live="polite"
+              data-translator-result="true"
+              data-has-result={props.value ? "true" : "false"}
             >
               {props.value || (
                 <span className="output-placeholder">
