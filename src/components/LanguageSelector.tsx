@@ -1,4 +1,4 @@
-import type { ChangeEvent } from "react";
+import type { ChangeEvent, CSSProperties } from "react";
 import { LANGUAGES, type LanguageCode } from "@/lib/languages";
 
 interface LanguageSelectorProps {
@@ -10,11 +10,32 @@ interface LanguageSelectorProps {
   disabled?: boolean;
 }
 
-const LANGUAGE_FLAGS: Record<LanguageCode, string> = {
-  en: "🇺🇸",
-  hyw: "🇦🇲",
-  hye: "🇦🇲",
-};
+function flagStyle(code: LanguageCode): CSSProperties {
+  const base: CSSProperties = {
+    width: "22px",
+    height: "14px",
+    display: "inline-block",
+    flex: "0 0 22px",
+    borderRadius: "2px",
+    overflow: "hidden",
+    boxShadow: "inset 0 0 0 1px rgba(0, 0, 0, 0.08)",
+  };
+
+  if (code === "en") {
+    return {
+      ...base,
+      background:
+        "repeating-linear-gradient(to bottom, #b22234 0 7.7%, #ffffff 7.7% 15.4%)",
+      position: "relative",
+    };
+  }
+
+  return {
+    ...base,
+    background:
+      "linear-gradient(to bottom, #d90012 0 33.333%, #0033a0 33.333% 66.666%, #f2a800 66.666% 100%)",
+  };
+}
 
 export function LanguageSelector({
   id,
@@ -31,20 +52,27 @@ export function LanguageSelector({
         <span
           aria-hidden="true"
           style={{
+            ...flagStyle(value),
             position: "absolute",
             left: "10px",
             top: "50%",
             transform: "translateY(-50%)",
             zIndex: 1,
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: "18px",
-            lineHeight: 1,
             pointerEvents: "none"
           }}
         >
-          {LANGUAGE_FLAGS[value]}
+          {value === "en" ? (
+            <span
+              style={{
+                position: "absolute",
+                left: 0,
+                top: 0,
+                width: "9px",
+                height: "7px",
+                background: "#3c3b6e",
+              }}
+            />
+          ) : null}
         </span>
 
         <select
@@ -52,7 +80,7 @@ export function LanguageSelector({
           value={value}
           onChange={(event: ChangeEvent<HTMLSelectElement>) => onChange(event.target.value as LanguageCode)}
           disabled={disabled}
-          style={{ paddingLeft: "36px" }}
+          style={{ paddingLeft: "42px" }}
         >
           {options.map((code) => (
             <option key={code} value={code}>
