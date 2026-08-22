@@ -62,9 +62,13 @@ export interface PlanConfig {
   widgetMonthlyCharacterLimit: number | null;
   widgetBrandingRemovable: boolean;
   overrideExpiresAt: string | null;
+  billingProvider: "stripe" | "woocommerce" | null;
+  subscriptionStatus: string | null;
   stripeStatus: string | null;
   stripeSubscriptionId: string | null;
   stripeCustomerId: string | null;
+  woocommerceSubscriptionId: number | null;
+  woocommerceCustomerId: number | null;
 }
 
 export interface AccountContext {
