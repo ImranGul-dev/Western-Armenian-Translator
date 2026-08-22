@@ -1,13 +1,37 @@
 .experiencePolish :global(.output-panel .panel-header) {
-  grid-template-columns: minmax(185px, 1fr) auto;
+  grid-template-columns: minmax(210px, 1fr) auto;
+  gap: 8px;
+  padding-left: 8px;
+  padding-right: 8px;
 }
 
 .experiencePolish :global(.output-panel .select-wrap) {
-  max-width: 235px;
+  width: 100%;
+  max-width: 250px;
 }
 
 .experiencePolish :global(.output-panel .select-wrap select) {
   text-overflow: clip;
+}
+
+.experiencePolish :global(.output-panel .panel-actions) {
+  gap: 5px;
+}
+
+.experiencePolish :global(.output-panel .voice-listen-control .panel-action) {
+  min-width: 64px;
+  padding-inline: 7px;
+}
+
+.experiencePolish :global(.output-panel .voice-speed-select) {
+  width: 58px;
+  min-width: 58px;
+  padding-inline: 6px;
+}
+
+.experiencePolish :global(.output-panel .panel-actions > .panel-action) {
+  min-width: 34px;
+  padding-inline: 6px;
 }
 
 .historyListPolish article {
@@ -57,13 +81,19 @@
   white-space: nowrap;
 }
 
+@media (min-width: 821px) {
+  .experiencePolish :global(.translator-grid) {
+    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  }
+}
+
 @media (max-width: 960px) {
   .experiencePolish :global(.output-panel .panel-header) {
-    grid-template-columns: minmax(165px, 1fr) auto;
+    grid-template-columns: minmax(185px, 1fr) auto;
   }
 
   .experiencePolish :global(.output-panel .select-wrap) {
-    max-width: 220px;
+    max-width: 235px;
   }
 }
 
