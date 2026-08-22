@@ -49,6 +49,10 @@
   border-bottom: 1px solid var(--border);
 }
 
+.experience :global(.language-control) {
+  min-width: 0;
+}
+
 .experience :global(.language-control label) {
   display: none;
 }
@@ -64,6 +68,65 @@
 .experience :global(.select-wrap select) {
   font-size: 14px;
   font-weight: 800;
+}
+
+.experience :global(.output-panel .panel-header) {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.experience :global(.output-panel .select-wrap) {
+  width: 100%;
+  min-width: 0;
+  max-width: 210px;
+}
+
+.experience :global(.output-panel .panel-actions) {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+
+.experience :global(.output-panel .voice-listen-control) {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.experience :global(.output-panel .voice-listen-control .panel-action) {
+  min-width: 70px;
+  min-height: 38px;
+  padding: 0 9px;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  white-space: nowrap;
+}
+
+.experience :global(.output-panel .voice-speed-select) {
+  width: 64px;
+  min-width: 64px;
+  height: 38px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.experience :global(.output-panel .panel-actions > .panel-action) {
+  min-width: 38px;
+  min-height: 38px;
+  padding: 0 8px;
+  justify-content: center;
+  white-space: nowrap;
 }
 
 .experience :global(.input-panel .panel-actions > button:nth-child(1)),
@@ -548,6 +611,38 @@
   .experience :global(.panel-body textarea),
   .experience :global(.translation-output) {
     min-height: 185px;
+  }
+
+  .experience :global(.output-panel .panel-header) {
+    grid-template-columns: minmax(128px, 1fr) auto;
+    gap: 7px;
+  }
+
+  .experience :global(.output-panel .voice-listen-control .panel-action) {
+    min-width: 38px;
+    width: 38px;
+    padding: 0;
+  }
+
+  .experience :global(.output-panel .voice-listen-control .panel-action span:last-child) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+
+  .experience :global(.output-panel .voice-speed-select) {
+    width: 58px;
+    min-width: 58px;
+  }
+
+  .experience :global(.output-panel .panel-actions > .panel-action span:last-child) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
   }
 
   .quickActions {
