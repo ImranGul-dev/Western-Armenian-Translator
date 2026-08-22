@@ -7,7 +7,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) 260px;
   gap: 18px;
-  align-items: stretch;
+  align-items: start;
 }
 
 .translatorColumn {
@@ -40,7 +40,7 @@
 }
 
 .experience :global(.output-panel) {
-  background: color-mix(in srgb, var(--surface) 96%, #f3efff 4%);
+  background: color-mix(in srgb, var(--surface) 97%, var(--accent-soft) 3%);
 }
 
 .experience :global(.panel-header) {
@@ -170,7 +170,8 @@
   display: grid;
   place-items: center;
   border-radius: 50%;
-  background: var(--surface-soft);
+  background: color-mix(in srgb, var(--accent-soft) 42%, var(--surface-soft));
+  color: var(--accent-text);
   font-size: 16px;
 }
 
@@ -179,6 +180,7 @@
   padding: 18px;
   display: flex;
   flex-direction: column;
+  align-self: start;
   border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
   border-radius: 14px;
   background: linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 55%, var(--surface)) 0%, var(--surface) 100%);
@@ -267,12 +269,13 @@
 }
 
 .aiFooter {
-  margin-top: auto;
-  padding-top: 18px;
+  margin-top: 18px;
+  padding-top: 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  border-top: 1px solid color-mix(in srgb, var(--accent) 10%, var(--border));
   color: var(--accent-text);
   font-size: 12px;
 }
@@ -300,12 +303,12 @@
 
 .learningCard {
   padding: 14px;
-  background: linear-gradient(135deg, color-mix(in srgb, #f4efff 45%, var(--surface)) 0%, var(--surface) 68%);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent-soft) 34%, var(--surface)) 0%, var(--surface) 68%);
 }
 
 .exampleCard {
   padding: 13px 14px;
-  background: linear-gradient(135deg, color-mix(in srgb, #eef5ff 55%, var(--surface)) 0%, var(--surface) 80%);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent-soft) 24%, var(--surface)) 0%, var(--surface) 80%);
 }
 
 .sectionHeading {
@@ -315,7 +318,7 @@
 }
 
 .sectionHeading > span {
-  color: #7151d5;
+  color: var(--accent);
   font-weight: 900;
 }
 
@@ -345,6 +348,13 @@
   text-align: left;
   text-decoration: none;
   cursor: pointer;
+  transition: border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
+}
+
+.learningTool:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--accent) 24%, var(--border-strong));
+  box-shadow: 0 7px 18px rgba(20, 24, 30, 0.04);
 }
 
 .learningTool strong,
@@ -363,7 +373,7 @@
   position: absolute;
   right: 10px;
   bottom: 8px;
-  color: var(--text-muted);
+  color: var(--accent-text);
   font-size: 20px;
 }
 
@@ -377,13 +387,19 @@
 .exampleChips button {
   min-height: 31px;
   padding: 5px 10px;
-  border: 1px solid #d7e2f5;
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
   border-radius: 999px;
-  background: color-mix(in srgb, #f4f8ff 75%, var(--surface));
-  color: #365a92;
+  background: color-mix(in srgb, var(--accent-soft) 44%, var(--surface));
+  color: var(--accent-text);
   font-size: 10px;
   font-weight: 700;
   cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.exampleChips button:hover {
+  border-color: color-mix(in srgb, var(--accent) 34%, var(--border));
+  background: color-mix(in srgb, var(--accent-soft) 68%, var(--surface));
 }
 
 .historyCard {
@@ -399,10 +415,14 @@
 }
 
 .historyHeading a {
-  color: #7250d6;
+  color: var(--accent-text);
   font-size: 11px;
   font-weight: 800;
   text-decoration: none;
+}
+
+.historyHeading a:hover {
+  color: var(--accent);
 }
 
 .historyList {
