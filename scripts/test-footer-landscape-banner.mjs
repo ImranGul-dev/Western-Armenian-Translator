@@ -5,7 +5,7 @@ const cssPath = "src/components/Footer.module.css";
 const css = fs.existsSync(cssPath) ? fs.readFileSync(cssPath, "utf8") : "";
 
 for (const required of [
-  "https://tunapp.com/wp-content/uploads/2026/09/Tun-Footer-Translate__.png",
+  "/tun-footer-translate.png",
   "tunapp-footer-curve",
   "tunapp-footer-scene",
   "tunapp-footer-artwork",
