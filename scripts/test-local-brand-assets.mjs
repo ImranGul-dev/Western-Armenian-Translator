@@ -2,30 +2,23 @@ import fs from "node:fs";
 
 const header = fs.readFileSync("src/components/Header.tsx", "utf8");
 const footer = fs.readFileSync("src/components/Footer.tsx", "utf8");
-
-for (const assetPath of [
-  "public/tun-logo.png",
-  "public/tun-footer-translate.png",
-]) {
-  if (!fs.existsSync(assetPath)) {
-    throw new Error(`Local brand asset is missing: ${assetPath}`);
-  }
-}
+const redirects = fs.readFileSync("public/_redirects", "utf8");
 
 if (!header.includes('const TUN_LOGO_URL = "/tun-logo.png";')) {
-  throw new Error("Header must use the local Tun logo asset");
+  throw new Error("Header must use the same-origin Tun logo route");
 }
 
 if (!footer.includes('src="/tun-footer-translate.png"')) {
-  throw new Error("Footer must use the local Tun footer artwork");
+  throw new Error("Footer must use the same-origin Tun footer artwork route");
 }
 
-if (header.includes("Tun-Logo_Web-Black_80.png")) {
-  throw new Error("Header must not hotlink the Tun logo from tunapp.com");
+for (const requiredRedirect of [
+  "/tun-logo.png https://tunapp.com/wp-content/uploads/2020/09/Tun-Logo_Web-Black_80.png 200",
+  "/tun-footer-translate.png https://tunapp.com/wp-content/uploads/2026/09/Tun-Footer-Translate__.png 200",
+]) {
+  if (!redirects.includes(requiredRedirect)) {
+    throw new Error(`Brand asset proxy is missing: ${requiredRedirect}`);
+  }
 }
 
-if (footer.includes("Tun-Footer-Translate__.png")) {
-  throw new Error("Footer must not hotlink the footer artwork from tunapp.com");
-}
-
-console.log("Local Tun brand asset checks passed.");
+console.log("Same-origin Tun brand asset proxy checks passed.");
