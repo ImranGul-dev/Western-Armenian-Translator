@@ -25,7 +25,7 @@ const clientLanguages=await read("src/lib/languages.ts");for(const x of ['{ sour
 const transliteration=await read("src/lib/western-armenian-transliteration.ts");has(transliteration,/կ:\s*"g"/u,"Western Armenian transliteration uses կ → g");
 const all=await walk(root);
 const productionMigration=await read("supabase/migrations/20260805000200_production_branding_and_plan_admin.sql");for(const x of ["anonymous_usage","plans_admin_write","get_public_translation_settings"])has(productionMigration,new RegExp(x,"u"),`production migration includes ${x}`);
-const header=await read("src/components/Header.tsx");has(header,/Tun-Logo_Web-Black_80\.png/u,"official Tun logo configured");
+const header=await read("src/components/Header.tsx");has(header,/TUN_LOGO_URL\s*=\s*"\/tun-logo\.png"/u,"official Tun logo configured");
 const layout=await read("src/app/layout.tsx");has(layout,/\/favicon-32\.png/u,"official Tun favicon configured");
 const adminPlans=await read("src/app/admin/plans/page.tsx");for(const x of ["Anonymous visitor limits","WooCommerce billing","Save visitor limits"])has(adminPlans,new RegExp(x,"u"),`plan admin includes ${x}`);
 const checkout=await read("supabase/functions/stripe-checkout/index.ts");for(const x of ["stripe_price_id","unit_amount","recurring"])has(checkout,new RegExp(x,"u"),`checkout validates ${x}`);
