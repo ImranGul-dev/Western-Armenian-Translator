@@ -5,7 +5,7 @@ const cssPath = "src/components/Footer.module.css";
 const css = fs.existsSync(cssPath) ? fs.readFileSync(cssPath, "utf8") : "";
 
 for (const required of [
-  "https://tunapp.com/wp-content/uploads/2026/09/Tun-Footer-Translate__.png",
+  "/tun-footer-translate.png",
   "tunapp-footer-curve",
   "tunapp-footer-scene",
   "tunapp-footer-artwork",
@@ -136,8 +136,11 @@ if (pageBackgroundUses.length < 2) {
   throw new Error("TunApp footer root and curve must use the shared page background");
 }
 
-if (css.includes("background: #ffffff;")) {
-  throw new Error("TunApp footer should not force a white background");
+for (const selector of ["root", "curve"]) {
+  const block = css.match(new RegExp(`\\.${selector}\\s*\\{([^}]*)\\}`))?.[1] ?? "";
+  if (block.includes("background: #ffffff;")) {
+    throw new Error(`TunApp footer ${selector} should not force a white background`);
+  }
 }
 
 console.log("TunApp footer artwork, link columns, social links and copyright checks passed.");

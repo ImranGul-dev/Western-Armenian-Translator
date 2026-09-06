@@ -9,8 +9,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { hasPaidFeatureAccess } from "@/lib/paid-feature-access";
 import { useAuth } from "@/contexts/AuthContext";
 
-const TUN_LOGO_URL =
-  "https://tunapp.com/wp-content/uploads/2020/09/Tun-Logo_Web-Black_80.png";
+const TUN_LOGO_URL = "/tun-logo.png";
 
 export function Header() {
   const pathname = usePathname();

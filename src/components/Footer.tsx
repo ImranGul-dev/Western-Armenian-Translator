@@ -73,7 +73,7 @@ export function Footer() {
         <div className={`${styles.scene} tunapp-footer-scene`}>
           <img
             className={`${styles.artwork} tunapp-footer-artwork`}
-            src="https://tunapp.com/wp-content/uploads/2026/09/Tun-Footer-Translate__.png"
+            src="/tun-footer-translate.png"
             alt=""
             loading="lazy"
           />
@@ -101,35 +101,80 @@ export function Footer() {
                 </div>
 
                 {column.heading === "Company" ? (
-                  <div className={styles.socialLinks}>
-                    <a
-                      className={styles.socialLink}
-                      href="https://instagram.com/tun.armenian"
-                      aria-label="Instagram"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <InstagramIcon />
-                    </a>
-                    <a
-                      className={styles.socialLink}
-                      href="https://www.tiktok.com/@tun.armenian"
-                      aria-label="TikTok"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <TikTokIcon />
-                    </a>
-                    <a
-                      className={styles.socialLink}
-                      href="https://www.youtube.com/@TunOnlineArmenianSchool"
-                      aria-label="YouTube"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <YouTubeIcon />
-                    </a>
-                  </div>
+                  <>
+                    <div className={styles.socialLinks}>
+                      <a
+                        className={styles.socialLink}
+                        href="https://instagram.com/tun.armenian"
+                        aria-label="Instagram"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <InstagramIcon />
+                      </a>
+                      <a
+                        className={styles.socialLink}
+                        href="https://www.tiktok.com/@tun.armenian"
+                        aria-label="TikTok"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <TikTokIcon />
+                      </a>
+                      <a
+                        className={styles.socialLink}
+                        href="https://www.youtube.com/@TunOnlineArmenianSchool"
+                        aria-label="YouTube"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <YouTubeIcon />
+                      </a>
+                    </div>
+
+                    <div className={styles.newsletter}>
+                      <form
+                        className={styles.newsletterForm}
+                        action="https://tunapp.us5.list-manage.com/subscribe/post?u=cf919aa58fa15934e1e2a04a0&amp;id=3feeed30f4&amp;f_id=00a043edf0"
+                        method="post"
+                        target="_blank"
+                      >
+                        <label
+                          className={styles.newsletterLabel}
+                          htmlFor="tun-footer-email"
+                        >
+                          Email address
+                        </label>
+                        <input
+                          className={styles.newsletterEmail}
+                          id="tun-footer-email"
+                          type="email"
+                          name="EMAIL"
+                          placeholder="Enter your email here"
+                          autoComplete="email"
+                          required
+                        />
+                        <div
+                          className={styles.newsletterHoneypot}
+                          aria-hidden="true"
+                        >
+                          <input
+                            type="text"
+                            name="b_cf919aa58fa15934e1e2a04a0_3feeed30f4"
+                            tabIndex={-1}
+                            defaultValue=""
+                          />
+                        </div>
+                        <button
+                          className={styles.newsletterButton}
+                          type="submit"
+                          name="subscribe"
+                        >
+                          Join the community
+                        </button>
+                      </form>
+                    </div>
+                  </>
                 ) : null}
               </div>
             ))}
