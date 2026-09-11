@@ -141,8 +141,20 @@ if (!form.includes('name="_newsletter_started_at"')) {
 if (!form.includes('name="b_cf919aa58fa15934e1e2a04a0_3feeed30f4"')) {
   throw new Error("Footer newsletter form must preserve the Mailchimp honeypot");
 }
+assert.match(form, /next\/script/, "footer form must load Turnstile through Next Script");
+assert.match(form, /challenges\.cloudflare\.com\/turnstile\/v0\/api\.js/, "footer form must load the Turnstile client");
+assert.match(form, /NEXT_PUBLIC_TURNSTILE_SITE_KEY/, "footer form must use the configured public Turnstile site key");
+assert.match(form, /data-appearance=["']interaction-only["']/, "Turnstile should remain visually unobtrusive unless interaction is needed");
+
 if (!fs.existsSync(routePath)) {
   throw new Error("Newsletter API route is missing");
 }
+const route = fs.readFileSync(routePath, "utf8");
+assert.match(route, /NEWSLETTER_SOURCE_TAG\s*=\s*["']Translation Tool["']/, "translator route must use the Translation Tool source tag");
+assert.match(route, /EXPECTED_TURNSTILE_HOSTNAME\s*=\s*["']translatearmenian\.com["']/, "translator route must verify the production hostname");
+assert.match(route, /cf-turnstile-response/, "route must read the Turnstile token");
+assert.match(route, /verifyTurnstileToken/, "route must verify Turnstile server-side");
+assert.match(route, /subscribeAndTagMailchimp/, "route must use the Mailchimp API helper");
+assert.doesNotMatch(route, /tunapp\.us5\.list-manage\.com\/subscribe\/post/, "route must stop forwarding to the public Mailchimp form endpoint");
 
 console.log("Footer newsletter spam-guard checks passed.");
