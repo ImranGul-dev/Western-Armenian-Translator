@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 
 const guardUrl = new URL("../src/lib/newsletter-spam.ts", import.meta.url);
-const footerPath = new URL("../src/components/Footer.tsx", import.meta.url);
+const formPath = new URL("../src/components/FooterNewsletterForm.tsx", import.meta.url);
 const routePath = new URL("../src/app/api/newsletter/route.ts", import.meta.url);
 
 if (!fs.existsSync(guardUrl)) {
@@ -131,12 +131,15 @@ assert.equal(limiter.allow("ip:203.0.113.10", 2, 60_000, now + 100), true);
 assert.equal(limiter.allow("ip:203.0.113.10", 2, 60_000, now + 200), false);
 assert.equal(limiter.allow("ip:203.0.113.10", 2, 60_000, now + 60_001), true);
 
-const footer = fs.readFileSync(footerPath, "utf8");
-if (!footer.includes('action="/api/newsletter"')) {
+const form = fs.readFileSync(formPath, "utf8");
+if (!form.includes('action="/api/newsletter"')) {
   throw new Error("Footer newsletter form must post through /api/newsletter");
 }
-if (!footer.includes('name="_newsletter_started_at"')) {
+if (!form.includes('name="_newsletter_started_at"')) {
   throw new Error("Footer newsletter form must include the hidden timing field");
+}
+if (!form.includes('name="b_cf919aa58fa15934e1e2a04a0_3feeed30f4"')) {
+  throw new Error("Footer newsletter form must preserve the Mailchimp honeypot");
 }
 if (!fs.existsSync(routePath)) {
   throw new Error("Newsletter API route is missing");
