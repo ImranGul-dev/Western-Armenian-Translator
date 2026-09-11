@@ -1,21 +1,33 @@
 import fs from "node:fs";
 
 const footer = fs.readFileSync("src/components/Footer.tsx", "utf8");
+const form = fs.readFileSync("src/components/FooterNewsletterForm.tsx", "utf8");
 const css = fs.readFileSync("src/components/Footer.module.css", "utf8");
 
 const requiredFooterSnippets = [
   'className={styles.newsletter}',
-  'className={styles.newsletterForm}',
-  'action="https://tunapp.us5.list-manage.com/subscribe/post?u=cf919aa58fa15934e1e2a04a0&amp;id=3feeed30f4&amp;f_id=00a043edf0"',
-  'name="EMAIL"',
-  'placeholder="Enter your email here"',
-  'name="b_cf919aa58fa15934e1e2a04a0_3feeed30f4"',
-  'Join the community',
+  '<FooterNewsletterForm />',
 ];
 
 for (const snippet of requiredFooterSnippets) {
   if (!footer.includes(snippet)) {
     throw new Error(`Footer community signup missing: ${snippet}`);
+  }
+}
+
+const requiredFormSnippets = [
+  'className={styles.newsletterForm}',
+  'action="/api/newsletter"',
+  'name="EMAIL"',
+  'placeholder="Enter your email here"',
+  'name="b_cf919aa58fa15934e1e2a04a0_3feeed30f4"',
+  'name="_newsletter_started_at"',
+  'Join the community',
+];
+
+for (const snippet of requiredFormSnippets) {
+  if (!form.includes(snippet)) {
+    throw new Error(`Footer community signup form missing: ${snippet}`);
   }
 }
 
