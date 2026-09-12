@@ -3,12 +3,20 @@ import {
   newsletterRateLimiter,
   validateNewsletterSubmission,
 } from "@/lib/newsletter-spam";
+import { subscribeAndTagMailchimp } from "@/lib/newsletter-mailchimp";
+import { verifyTurnstileToken } from "@/lib/newsletter-turnstile";
 
 export const runtime = "nodejs";
 
-const MAILCHIMP_ACTION =
-  "https://tunapp.us5.list-manage.com/subscribe/post?u=cf919aa58fa15934e1e2a04a0&id=3feeed30f4&f_id=00a043edf0";
 const MAILCHIMP_HONEYPOT = "b_cf919aa58fa15934e1e2a04a0_3feeed30f4";
+const TURNSTILE_ACTION = "newsletter_signup";
+
+function allowedTurnstileHostnames(): string[] {
+  return (process.env.TURNSTILE_ALLOWED_HOSTNAMES ?? "")
+    .split(",")
+    .map((hostname) => hostname.trim().toLowerCase())
+    .filter(Boolean);
+}
 
 function htmlResponse(message: string, status: number) {
   const safeMessage = message.replace(/[&<>"']/g, (character) => {
@@ -23,7 +31,7 @@ function htmlResponse(message: string, status: number) {
   });
 
   return new Response(
-    `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tun community signup</title></head><body><main><p>${safeMessage}</p></main></body></html>`,
+    `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tun newsletter</title></head><body><main><p>${safeMessage}</p></main></body></html>`,
     {
       status,
       headers: {
@@ -61,12 +69,11 @@ export async function POST(request: Request) {
 
   if (!validation.ok) {
     if (validation.reason === "honeypot") {
-      // Do not give bots useful feedback about the trap.
-      return htmlResponse("Thanks. Your signup was submitted.", 200);
+      return htmlResponse("Thanks. You're on the newsletter.", 200);
     }
 
     if (validation.reason === "disposable_domain") {
-      return htmlResponse("Please use a permanent email address to join the community.", 400);
+      return htmlResponse("Please use a permanent email address to join the newsletter.", 400);
     }
 
     return htmlResponse("Please enter a valid email address and try again.", 400);
@@ -78,36 +85,59 @@ export async function POST(request: Request) {
   const emailAllowed = newsletterRateLimiter.allow(`email:${validation.email}`, 3, 60 * 60_000, now);
 
   if (!ipAllowed || !emailAllowed) {
-    return htmlResponse("Too many signup attempts. Please wait a little and try again.", 429);
+    return htmlResponse("Too many attempts. Please wait a little and try again.", 429);
+  }
+
+  const mailchimpApiKey = process.env.MAILCHIMP_API_KEY;
+  const mailchimpServerPrefix = process.env.MAILCHIMP_SERVER_PREFIX;
+  const mailchimpAudienceId = process.env.MAILCHIMP_AUDIENCE_ID;
+  const mailchimpSourceTag = process.env.MAILCHIMP_SOURCE_TAG;
+  const turnstileSecret = process.env.TURNSTILE_SECRET_KEY;
+  const turnstileHostnames = allowedTurnstileHostnames();
+
+  if (
+    !mailchimpApiKey ||
+    !mailchimpServerPrefix ||
+    !mailchimpAudienceId ||
+    !mailchimpSourceTag ||
+    !turnstileSecret ||
+    turnstileHostnames.length === 0
+  ) {
+    return htmlResponse("We could not add you to the newsletter right now. Please try again shortly.", 503);
+  }
+
+  const turnstileToken = String(formData.get("cf-turnstile-response") ?? "");
+  const turnstileOk = await verifyTurnstileToken({
+    token: turnstileToken,
+    secret: turnstileSecret,
+    remoteIp: ip,
+    allowedHostnames: turnstileHostnames,
+    expectedAction: TURNSTILE_ACTION,
+  });
+
+  if (!turnstileOk) {
+    return htmlResponse("We could not verify this request. Please try again.", 400);
   }
 
   if (!(await hasMailExchange(validation.domain))) {
     return htmlResponse("Please use an email domain that can receive email.", 400);
   }
 
-  const body = new URLSearchParams({
-    EMAIL: validation.email,
-    [MAILCHIMP_HONEYPOT]: "",
-    subscribe: "Join the community",
+  const result = await subscribeAndTagMailchimp({
+    email: validation.email,
+    apiKey: mailchimpApiKey,
+    serverPrefix: mailchimpServerPrefix,
+    audienceId: mailchimpAudienceId,
+    sourceTag: mailchimpSourceTag,
   });
 
-  try {
-    const response = await fetch(MAILCHIMP_ACTION, {
-      method: "POST",
-      headers: {
-        "content-type": "application/x-www-form-urlencoded",
-      },
-      body: body.toString(),
-      redirect: "follow",
-      cache: "no-store",
-    });
-
-    if (!response.ok) {
-      return htmlResponse("We could not submit your signup right now. Please try again shortly.", 502);
-    }
-
-    return htmlResponse("Thanks. Your signup was submitted.", 200);
-  } catch {
-    return htmlResponse("We could not submit your signup right now. Please try again shortly.", 502);
+  if (!result.ok) {
+    return htmlResponse("We could not add you to the newsletter right now. Please try again shortly.", 502);
   }
+
+  if (!result.tagged) {
+    console.warn("Newsletter signup succeeded, but Mailchimp source tagging failed after retries.");
+  }
+
+  return htmlResponse("Thanks. You're on the newsletter.", 200);
 }
