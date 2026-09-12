@@ -9,8 +9,14 @@ import { verifyTurnstileToken } from "@/lib/newsletter-turnstile";
 export const runtime = "nodejs";
 
 const MAILCHIMP_HONEYPOT = "b_cf919aa58fa15934e1e2a04a0_3feeed30f4";
-const NEWSLETTER_SOURCE_TAG = "Translation Tool";
-const EXPECTED_TURNSTILE_HOSTNAME = "translatearmenian.com";
+const TURNSTILE_ACTION = "newsletter_signup";
+
+function allowedTurnstileHostnames(): string[] {
+  return (process.env.TURNSTILE_ALLOWED_HOSTNAMES ?? "")
+    .split(",")
+    .map((hostname) => hostname.trim().toLowerCase())
+    .filter(Boolean);
+}
 
 function htmlResponse(message: string, status: number) {
   const safeMessage = message.replace(/[&<>"']/g, (character) => {
@@ -85,9 +91,18 @@ export async function POST(request: Request) {
   const mailchimpApiKey = process.env.MAILCHIMP_API_KEY;
   const mailchimpServerPrefix = process.env.MAILCHIMP_SERVER_PREFIX;
   const mailchimpAudienceId = process.env.MAILCHIMP_AUDIENCE_ID;
+  const mailchimpSourceTag = process.env.MAILCHIMP_SOURCE_TAG;
   const turnstileSecret = process.env.TURNSTILE_SECRET_KEY;
+  const turnstileHostnames = allowedTurnstileHostnames();
 
-  if (!mailchimpApiKey || !mailchimpServerPrefix || !mailchimpAudienceId || !turnstileSecret) {
+  if (
+    !mailchimpApiKey ||
+    !mailchimpServerPrefix ||
+    !mailchimpAudienceId ||
+    !mailchimpSourceTag ||
+    !turnstileSecret ||
+    turnstileHostnames.length === 0
+  ) {
     return htmlResponse("We could not add you to the newsletter right now. Please try again shortly.", 503);
   }
 
@@ -96,7 +111,8 @@ export async function POST(request: Request) {
     token: turnstileToken,
     secret: turnstileSecret,
     remoteIp: ip,
-    expectedHostname: EXPECTED_TURNSTILE_HOSTNAME,
+    allowedHostnames: turnstileHostnames,
+    expectedAction: TURNSTILE_ACTION,
   });
 
   if (!turnstileOk) {
@@ -112,11 +128,15 @@ export async function POST(request: Request) {
     apiKey: mailchimpApiKey,
     serverPrefix: mailchimpServerPrefix,
     audienceId: mailchimpAudienceId,
-    sourceTag: NEWSLETTER_SOURCE_TAG,
+    sourceTag: mailchimpSourceTag,
   });
 
   if (!result.ok) {
     return htmlResponse("We could not add you to the newsletter right now. Please try again shortly.", 502);
+  }
+
+  if (!result.tagged) {
+    console.warn("Newsletter signup succeeded, but Mailchimp source tagging failed after retries.");
   }
 
   return htmlResponse("Thanks. You're on the newsletter.", 200);

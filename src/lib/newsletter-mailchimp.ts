@@ -13,7 +13,7 @@ export async function subscribeAndTagMailchimp(input: {
   audienceId: string;
   sourceTag: string;
   fetchImpl?: FetchLike;
-}): Promise<{ ok: true } | { ok: false; stage: "member" | "tag" }> {
+}): Promise<{ ok: true; tagged: boolean } | { ok: false; stage: "member" }> {
   const fetchImpl = input.fetchImpl ?? fetch;
   const email = input.email.trim().toLowerCase();
   const hash = mailchimpSubscriberHash(email);
@@ -31,7 +31,6 @@ export async function subscribeAndTagMailchimp(input: {
       body: JSON.stringify({
         email_address: email,
         status_if_new: "subscribed",
-        status: "subscribed",
       }),
       signal: AbortSignal.timeout(5_000),
     });
@@ -43,22 +42,24 @@ export async function subscribeAndTagMailchimp(input: {
     return { ok: false, stage: "member" };
   }
 
-  try {
-    const tagResponse = await fetchImpl(`${baseUrl}/tags`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        tags: [{ name: input.sourceTag, status: "active" }],
-      }),
-      signal: AbortSignal.timeout(5_000),
-    });
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      const tagResponse = await fetchImpl(`${baseUrl}/tags`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          tags: [{ name: input.sourceTag, status: "active" }],
+        }),
+        signal: AbortSignal.timeout(5_000),
+      });
 
-    if (!tagResponse.ok) {
-      return { ok: false, stage: "tag" };
+      if (tagResponse.ok) {
+        return { ok: true, tagged: true };
+      }
+    } catch {
+      // Retry transient tag failures. The member upsert is idempotent.
     }
-  } catch {
-    return { ok: false, stage: "tag" };
   }
 
-  return { ok: true };
+  return { ok: true, tagged: false };
 }

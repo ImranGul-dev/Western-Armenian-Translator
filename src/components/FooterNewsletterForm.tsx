@@ -59,6 +59,7 @@ export function FooterNewsletterForm() {
           className="cf-turnstile"
           data-sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? ""}
           data-appearance="interaction-only"
+          data-action="newsletter_signup"
         />
         <button
           className={styles.newsletterButton}

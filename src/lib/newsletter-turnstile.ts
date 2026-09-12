@@ -4,7 +4,8 @@ export async function verifyTurnstileToken(input: {
   token: string;
   secret: string;
   remoteIp: string;
-  expectedHostname: string;
+  allowedHostnames: string[];
+  expectedAction: string;
   fetchImpl?: FetchLike;
 }): Promise<boolean> {
   if (!input.token || !input.secret) return false;
@@ -36,9 +37,15 @@ export async function verifyTurnstileToken(input: {
     const data = (await response.json()) as {
       success?: boolean;
       hostname?: string;
+      action?: string;
     };
 
-    return data.success === true && data.hostname === input.expectedHostname;
+    return (
+      data.success === true &&
+      typeof data.hostname === "string" &&
+      input.allowedHostnames.includes(data.hostname.toLowerCase()) &&
+      data.action === input.expectedAction
+    );
   } catch {
     return false;
   }

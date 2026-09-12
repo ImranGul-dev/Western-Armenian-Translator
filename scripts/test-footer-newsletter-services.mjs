@@ -17,7 +17,11 @@ const goodTurnstileFetch = async (_url, init) => {
   assert.match(String(init.body), /secret=test-secret/);
   assert.match(String(init.body), /response=test-token/);
   return new Response(
-    JSON.stringify({ success: true, hostname: "translatearmenian.com" }),
+    JSON.stringify({
+      success: true,
+      hostname: "translatearmenian.com",
+      action: "newsletter_signup",
+    }),
     { status: 200 },
   );
 };
@@ -27,7 +31,8 @@ assert.equal(
     token: "test-token",
     secret: "test-secret",
     remoteIp: "203.0.113.10",
-    expectedHostname: "translatearmenian.com",
+    allowedHostnames: ["translatearmenian.com"],
+    expectedAction: "newsletter_signup",
     fetchImpl: goodTurnstileFetch,
   }),
   true,
@@ -39,10 +44,15 @@ assert.equal(
     token: "test-token",
     secret: "test-secret",
     remoteIp: "203.0.113.10",
-    expectedHostname: "translatearmenian.com",
+    allowedHostnames: ["translatearmenian.com"],
+    expectedAction: "newsletter_signup",
     fetchImpl: async () =>
       new Response(
-        JSON.stringify({ success: true, hostname: "evil.example" }),
+        JSON.stringify({
+          success: true,
+          hostname: "evil.example",
+          action: "newsletter_signup",
+        }),
         { status: 200 },
       ),
   }),
@@ -55,7 +65,8 @@ assert.equal(
     token: "",
     secret: "test-secret",
     remoteIp: "203.0.113.10",
-    expectedHostname: "translatearmenian.com",
+    allowedHostnames: ["translatearmenian.com"],
+    expectedAction: "newsletter_signup",
     fetchImpl: goodTurnstileFetch,
   }),
   false,
@@ -77,13 +88,17 @@ const result = await subscribeAndTagMailchimp({
   fetchImpl: mailchimpFetch,
 });
 
-assert.deepEqual(result, { ok: true });
+assert.deepEqual(result, { ok: true, tagged: true });
 assert.equal(calls.length, 2, "member upsert and tag request are both required");
 assert.match(calls[0].url, /lists\/3feeed30f4\/members\/d62f0f9be3b74a18cd1e01044d91c5d7$/);
 assert.equal(calls[0].init.method, "PUT");
 assert.equal(JSON.parse(calls[0].init.body).email_address, "learner@example.com");
 assert.equal(JSON.parse(calls[0].init.body).status_if_new, "subscribed");
-assert.equal(JSON.parse(calls[0].init.body).status, "subscribed");
+assert.equal(
+  "status" in JSON.parse(calls[0].init.body),
+  false,
+  "member upsert must preserve an existing contact's subscription status",
+);
 assert.match(calls[0].init.headers.authorization, /^Basic /);
 assert.match(calls[1].url, /\/tags$/);
 assert.equal(calls[1].init.method, "POST");
@@ -113,6 +128,28 @@ const tagFailure = await subscribeAndTagMailchimp({
     return new Response("{}", { status: requestNumber === 1 ? 200 : 500 });
   },
 });
-assert.deepEqual(tagFailure, { ok: false, stage: "tag" });
+assert.deepEqual(tagFailure, { ok: true, tagged: false });
+assert.equal(requestNumber, 4, "tagging must be retried three times after the member upsert");
+
+assert.equal(
+  await verifyTurnstileToken({
+    token: "test-token",
+    secret: "test-secret",
+    remoteIp: "203.0.113.10",
+    allowedHostnames: ["translatearmenian.com"],
+    expectedAction: "newsletter_signup",
+    fetchImpl: async () =>
+      new Response(
+        JSON.stringify({
+          success: true,
+          hostname: "translatearmenian.com",
+          action: "other_form",
+        }),
+        { status: 200 },
+      ),
+  }),
+  false,
+  "Turnstile action mismatch must fail",
+);
 
 console.log("Footer newsletter service checks passed.");

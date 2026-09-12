@@ -145,13 +145,15 @@ assert.match(form, /next\/script/, "footer form must load Turnstile through Next
 assert.match(form, /challenges\.cloudflare\.com\/turnstile\/v0\/api\.js/, "footer form must load the Turnstile client");
 assert.match(form, /NEXT_PUBLIC_TURNSTILE_SITE_KEY/, "footer form must use the configured public Turnstile site key");
 assert.match(form, /data-appearance=["']interaction-only["']/, "Turnstile should remain visually unobtrusive unless interaction is needed");
+assert.match(form, /data-action=["']newsletter_signup["']/, "footer form must bind the newsletter Turnstile action");
 
 if (!fs.existsSync(routePath)) {
   throw new Error("Newsletter API route is missing");
 }
 const route = fs.readFileSync(routePath, "utf8");
-assert.match(route, /NEWSLETTER_SOURCE_TAG\s*=\s*["']Translation Tool["']/, "translator route must use the Translation Tool source tag");
-assert.match(route, /EXPECTED_TURNSTILE_HOSTNAME\s*=\s*["']translatearmenian\.com["']/, "translator route must verify the production hostname");
+assert.match(route, /MAILCHIMP_SOURCE_TAG/, "translator route must use the configured Mailchimp source tag");
+assert.match(route, /TURNSTILE_ALLOWED_HOSTNAMES/, "translator route must use a configured hostname allowlist");
+assert.match(route, /TURNSTILE_ACTION\s*=\s*["']newsletter_signup["']/, "translator route must verify the newsletter Turnstile action");
 assert.match(route, /cf-turnstile-response/, "route must read the Turnstile token");
 assert.match(route, /verifyTurnstileToken/, "route must verify Turnstile server-side");
 assert.match(route, /subscribeAndTagMailchimp/, "route must use the Mailchimp API helper");
