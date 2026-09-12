@@ -22,7 +22,6 @@ if (footer.includes("new Date().getFullYear()")) {
 }
 
 const footerLinks = [
-  ["My Lessons", "https://tunapp.com/lessons"],
   ["Learn Armenian Online", "https://tunapp.com/get-started"],
   ["Courses, Flashcards and Workbooks", "https://tunapp.com/shop"],
   ["Armenian Social Network", "https://armeniansocialnetwork.com"],
@@ -40,8 +39,13 @@ const footerLinks = [
   ["Website Terms", "https://tunapp.com/website-terms/"],
   ["Affiliate Program", "https://tunapp.com/ambassadors/"],
   ["Blog", "https://tunapp.com/blog"],
+  ["Quizzes", "https://tunapp.com/armenian-quizzes"],
   ["Contact Us", "mailto:hello@tunapp.com"],
 ];
+
+if (footer.includes('["My Lessons", "https://tunapp.com/lessons"]')) {
+  throw new Error("TunApp footer Learn column must not include My Lessons");
+}
 
 for (const heading of ["Learn", "Account", "Company"]) {
   if (!footer.includes(`heading: "${heading}"`)) {
@@ -53,6 +57,14 @@ for (const [label, href] of footerLinks) {
   if (!footer.includes(`["${label}", "${href}"]`)) {
     throw new Error(`TunApp footer missing link: ${label} -> ${href}`);
   }
+}
+
+const blogIndex = footer.indexOf('["Blog", "https://tunapp.com/blog"]');
+const quizzesIndex = footer.indexOf('["Quizzes", "https://tunapp.com/armenian-quizzes"]');
+const contactIndex = footer.indexOf('["Contact Us", "mailto:hello@tunapp.com"]');
+
+if (!(blogIndex < quizzesIndex && quizzesIndex < contactIndex)) {
+  throw new Error("TunApp footer Company column must place Quizzes after Blog and before Contact Us");
 }
 
 for (const required of [
