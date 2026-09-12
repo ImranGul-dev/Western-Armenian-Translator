@@ -5,7 +5,6 @@ const footerColumns = [
   {
     heading: "Learn",
     links: [
-      ["My Lessons", "https://tunapp.com/lessons"],
       ["Learn Armenian Online", "https://tunapp.com/get-started"],
       ["Courses, Flashcards and Workbooks", "https://tunapp.com/shop"],
       ["Armenian Social Network", "https://armeniansocialnetwork.com"],
@@ -33,6 +32,7 @@ const footerColumns = [
       ["Website Terms", "https://tunapp.com/website-terms/"],
       ["Affiliate Program", "https://tunapp.com/ambassadors/"],
       ["Blog", "https://tunapp.com/blog"],
+      ["Quizzes", "https://tunapp.com/armenian-quizzes"],
       ["Contact Us", "mailto:hello@tunapp.com"],
     ],
   },
